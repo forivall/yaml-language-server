@@ -12,6 +12,7 @@ import { JSONSchema } from '../src/languageservice/jsonSchema';
 import { CodeLens, Command, Range } from 'vscode-languageserver-protocol';
 import { YamlCommands } from '../src/commands';
 import { Telemetry } from '../src/languageserver/telemetry';
+import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
 
 const expect = chai.expect;
 chai.use(sinonChai);
@@ -51,7 +52,7 @@ describe('YAML CodeLens', () => {
     const schema: JSONSchema = {
       url: 'some://url/to/schema.json',
     };
-    yamlSchemaService.getSchemaForResource.resolves({ schema });
+    yamlSchemaService.getSchemaForResource.resolves({ schema } as ResolvedSchema);
     const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
     expect(result).is.not.empty;
@@ -66,7 +67,7 @@ describe('YAML CodeLens', () => {
     const schema: JSONSchema = {
       url: 'some://url/to/schema.json',
     };
-    yamlSchemaService.getSchemaForResource.resolves({ schema });
+    yamlSchemaService.getSchemaForResource.resolves({ schema } as ResolvedSchema);
     const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
     expect(result[0].range).is.deep.equal(Range.create(0, 0, 0, 0));
@@ -80,7 +81,7 @@ describe('YAML CodeLens', () => {
     const schema: JSONSchema = {
       url: 'some://url/to/schema.json',
     };
-    yamlSchemaService.getSchemaForResource.resolves({ schema });
+    yamlSchemaService.getSchemaForResource.resolves({ schema } as ResolvedSchema);
     const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
     expect(result.length).to.eq(1);
@@ -96,7 +97,7 @@ describe('YAML CodeLens', () => {
       url: 'some://url/to/schema.json',
       title: 'fooBar',
     } as JSONSchema;
-    yamlSchemaService.getSchemaForResource.resolves({ schema });
+    yamlSchemaService.getSchemaForResource.resolves({ schema } as ResolvedSchema);
     const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
     expect(result[0].command).is.deep.equal(
@@ -116,7 +117,7 @@ describe('YAML CodeLens', () => {
         },
       ],
     } as JSONSchema;
-    yamlSchemaService.getSchemaForResource.resolves({ schema });
+    yamlSchemaService.getSchemaForResource.resolves({ schema } as ResolvedSchema);
     const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
     expect(result).has.length(2);
@@ -138,7 +139,7 @@ describe('YAML CodeLens', () => {
         },
       ],
     } as JSONSchema;
-    yamlSchemaService.getSchemaForResource.resolves({ schema });
+    yamlSchemaService.getSchemaForResource.resolves({ schema } as ResolvedSchema);
     const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
     expect(result).has.length(2);
@@ -160,7 +161,7 @@ describe('YAML CodeLens', () => {
         },
       ],
     } as JSONSchema;
-    yamlSchemaService.getSchemaForResource.resolves({ schema });
+    yamlSchemaService.getSchemaForResource.resolves({ schema } as ResolvedSchema);
     const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
     expect(result).has.length(2);

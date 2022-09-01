@@ -106,9 +106,9 @@ export class YAMLSchemaService extends JSONSchemaService {
   [x: string]: any;
 
   private customSchemaProvider: CustomSchemaProvider | undefined;
-  private filePatternAssociations: JSONSchemaService.FilePatternAssociation[];
-  private contextService: WorkspaceContextService;
-  private requestService: SchemaRequestService;
+  protected filePatternAssociations: JSONSchemaService.FilePatternAssociation[];
+  protected contextService: WorkspaceContextService;
+  protected requestService: SchemaRequestService;
   public schemaPriorityMapping: Map<string, Set<SchemaPriority>>;
 
   private schemaUriToNameAndDescription = new Map<string, SchemaStoreSchema>();
@@ -505,9 +505,9 @@ export class YAMLSchemaService extends JSONSchemaService {
     return priorityMapping.get(highestPrio) || [];
   }
 
-  private async resolveCustomSchema(schemaUri, doc): ResolvedSchema {
+  private async resolveCustomSchema(schemaUri, doc): Promise<ResolvedSchema> {
     const unresolvedSchema = await this.loadSchema(schemaUri);
-    const schema = await this.resolveSchemaContent(unresolvedSchema, schemaUri, []);
+    const schema = await this.resolveSchemaContent(unresolvedSchema, schemaUri, {});
     if (schema.schema) {
       schema.schema.url = schemaUri;
     }
@@ -646,7 +646,7 @@ export class YAMLSchemaService extends JSONSchemaService {
                 'json.schema.nocontent',
                 "Unable to load schema from '{0}': No content. {1}",
                 toDisplayString(schemaUri),
-                unresolvedJsonSchema.errors
+                unresolvedJsonSchema.errors.join(',')
               );
               return new UnresolvedSchema(<JSONSchema>{}, [errorMessage]);
             }
