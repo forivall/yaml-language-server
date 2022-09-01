@@ -13,7 +13,7 @@ import {
   JSONSchemaService,
   SchemaDependencies,
   ISchemaContributions,
-  SchemaHandle,
+  ISchemaHandle as SchemaHandle,
 } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
 
 import { URI } from 'vscode-uri';
@@ -101,10 +101,6 @@ interface SchemaStoreSchema {
   versions?: SchemaVersions;
 }
 export class YAMLSchemaService extends JSONSchemaService {
-  // To allow to use schemasById from super.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [x: string]: any;
-
   private customSchemaProvider: CustomSchemaProvider | undefined;
   protected filePatternAssociations: JSONSchemaService.FilePatternAssociation[];
   protected contextService: WorkspaceContextService;
