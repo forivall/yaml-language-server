@@ -11,7 +11,7 @@ import { YamlNode } from '../jsonASTTypes';
 type Visitor = (item: SourceToken, path: VisitPath) => number | symbol | Visitor | void;
 
 export function getParent(doc: Document, nodeToFind: YamlNode): YamlNode | undefined {
-  let parentNode: Node;
+  let parentNode: Node | undefined;
   visit(doc, (_, node: Node, path) => {
     if (node === nodeToFind) {
       parentNode = path[path.length - 1] as Node;
@@ -80,7 +80,7 @@ export function isInComment(tokens: Token[], offset: number): boolean {
   return inComment;
 }
 
-export function isCollectionItem(token: unknown): token is CollectionItem {
+export function isCollectionItem(token: object): token is CollectionItem {
   return token['start'] !== undefined;
 }
 

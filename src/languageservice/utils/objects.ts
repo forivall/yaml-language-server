@@ -94,5 +94,5 @@ export function convertErrorToTelemetryMsg(err: unknown): string {
     return err.stack ?? err.toString();
   }
 
-  return err.toString();
+  return String(err);
 }

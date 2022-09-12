@@ -45,6 +45,7 @@
   },
   "devDependencies": {
     "@types/chai": "^4.2.12",
+    "@types/eslint": "^7.29.0",
     "@types/mocha": "8.2.2",
     "@types/node": "^12.11.7",
     "@types/prettier": "2.0.2",

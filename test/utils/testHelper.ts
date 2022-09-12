@@ -76,10 +76,10 @@ export function setupLanguageService(languageSettings: LanguageSettings): TestLa
   const telemetry = new TestTelemetry(connection);
   const serverInit = new YAMLServerInit(connection, yamlSettings, workspaceContext, schemaRequestService, telemetry);
   serverInit.connectionInitialized({
-    processId: null,
+    processId: null!,
     capabilities: ClientCapabilities.LATEST as LSPClientCapabilities,
-    rootUri: null,
-    workspaceFolders: null,
+    rootUri: null!,
+    workspaceFolders: null!,
   });
   const languageService = serverInit.languageService;
   const validationHandler = serverInit.validationHandler;

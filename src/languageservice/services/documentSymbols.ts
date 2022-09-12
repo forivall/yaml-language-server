@@ -30,7 +30,7 @@ export class YAMLDocumentSymbols {
         name = '{}';
       } else if (isSeq(keyNode)) {
         name = '[]';
-      } else {
+      } else if (keyNode.source) {
         name = keyNode.source;
       }
       return name;
@@ -40,7 +40,7 @@ export class YAMLDocumentSymbols {
   public findDocumentSymbols(
     document: TextDocument,
     context: DocumentSymbolsContext = { resultLimit: Number.MAX_VALUE }
-  ): SymbolInformation[] {
+  ): SymbolInformation[] | null {
     let results = [];
     try {
       const doc = yamlDocumentsCache.getYamlDocument(document);
@@ -62,7 +62,7 @@ export class YAMLDocumentSymbols {
   public findHierarchicalDocumentSymbols(
     document: TextDocument,
     context: DocumentSymbolsContext = { resultLimit: Number.MAX_VALUE }
-  ): DocumentSymbol[] {
+  ): DocumentSymbol[] | null {
     let results = [];
     try {
       const doc = yamlDocumentsCache.getYamlDocument(document);

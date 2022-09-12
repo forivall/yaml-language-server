@@ -9,7 +9,7 @@ class CommonTagImpl {
     this.tag = tag;
     this.type = type;
   }
-  get collection(): 'map' | 'seq' | never {
+  get collection(): 'map' | 'seq' | undefined {
     if (this.type === 'mapping') {
       return 'map';
     }
@@ -19,7 +19,7 @@ class CommonTagImpl {
     return undefined;
   }
   identify?: (value: unknown) => boolean;
-  resolve(value: string | YAMLMap | YAMLSeq): string | YAMLMap | YAMLSeq {
+  resolve(value: string | YAMLMap | YAMLSeq): string | YAMLMap | YAMLSeq | undefined {
     if (isMap(value) && this.type === 'mapping') {
       return value;
     }
@@ -38,7 +38,7 @@ class IncludeTag {
   default: never;
   collection: never;
   identify?: (value: unknown) => boolean;
-  resolve(value: string, onError: (message: string) => void): string {
+  resolve(value: string, onError: (message: string) => never): string {
     if (value && value.length > 0 && value.trim()) {
       return value;
     }
@@ -51,8 +51,8 @@ class IncludeTag {
  * and returns Tags that can be used by the parser.
  * @param customTags Tags for parser
  */
-export function getCustomTags(customTags: string[]): Tags {
-  const tags = [];
+export function getCustomTags(customTags: string[] | undefined): Tags {
+  const tags: Tags = [];
   const filteredTags = filterInvalidCustomTags(customTags);
   for (const tag of filteredTags) {
     const typeInfo = tag.split(' ');

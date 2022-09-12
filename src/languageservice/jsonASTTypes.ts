@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Node, Pair } from 'yaml';
+import * as JSONAST from 'vscode-json-languageservice';
 
 export type YamlNode = Node | Pair;
 
@@ -25,7 +26,7 @@ export interface BaseASTNode {
   readonly value?: string | boolean | number | null;
   readonly internalNode: YamlNode;
   location: string;
-  getNodeFromOffsetEndInclusive(offset: number): ASTNode;
+  getNodeFromOffsetEndInclusive(offset: number): ASTNode | undefined;
 }
 export interface ObjectASTNode extends BaseASTNode {
   readonly type: 'object';

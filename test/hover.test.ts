@@ -59,7 +59,7 @@ describe('Hover Tests', () => {
     return languageHandler.hoverHandler({
       position: testTextDocument.positionAt(position),
       textDocument: testTextDocument,
-    });
+    }) as Promise<Hover>;
   }
 
   describe('Hover', function () {

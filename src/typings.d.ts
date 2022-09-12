@@ -63,7 +63,7 @@ declare module 'vscode-json-languageservice/lib/umd/services/jsonSchemaService' 
     getSectionRecursive(path: string[], schema: JSONSchemaRef): JSONSchemaRef | undefined;
   }
   export class JSONSchemaService {
-    schemasById: {
+    protected schemasById: {
       [id: string]: ISchemaHandle;
     };
     protected filePatternAssociations: JSONSchemaService.FilePatternAssociation[];
@@ -103,7 +103,7 @@ declare module 'vscode-json-languageservice/lib/umd/services/jsonSchemaService' 
     /**
      * Looks up the appropriate schema for the given URI
      */
-    getSchemaForResource(resource: string, document?: JSONDocument): Promise<ResolvedSchema | undefined>;
+    getSchemaForResource(resource: string, document?: JSONDocument): Promise<ResolvedSchema | null | undefined>;
     createCombinedSchema(resource: string, schemaIds: string[]): ISchemaHandle;
   }
 }

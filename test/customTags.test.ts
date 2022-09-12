@@ -29,7 +29,7 @@ describe('Custom Tag tests Tests', () => {
     const testTextDocument = setupTextDocument(content);
     languageSettingsSetup.languageSettings.customTags = customTags;
     languageService.configure(languageSettingsSetup.languageSettings);
-    return validationHandler.validateTextDocument(testTextDocument);
+    return validationHandler.validateTextDocument(testTextDocument) as Promise<Diagnostic[]>;
   }
 
   describe('Test that validation does not throw errors', function () {

@@ -113,7 +113,7 @@ describe('Object Equals Tests', () => {
 
 describe('Telemetry message conversion test', () => {
   it('null values should not cause problems', () => {
-    assert.doesNotThrow(() => convertErrorToTelemetryMsg(null));
+    assert.doesNotThrow(() => convertErrorToTelemetryMsg(null!));
   });
 
   it('should convert errors with stack correctly', () => {
@@ -124,7 +124,7 @@ describe('Telemetry message conversion test', () => {
 
   it('should convert errors with no stack correctly', () => {
     const e: Error = new Error('Test message');
-    e.stack = null;
+    (e as any).stack = null;
     const msg = convertErrorToTelemetryMsg(e);
     assert.equal(msg, e.toString());
   });

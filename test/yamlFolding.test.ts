@@ -19,7 +19,7 @@ describe('YAML Folding', () => {
 
   it('should return empty array for empty document', () => {
     const doc = setupTextDocument('');
-    const ranges = getFoldingRanges(doc, context);
+    const ranges = getFoldingRanges(doc, context)!;
     expect(ranges).to.be.empty;
   });
 
@@ -30,9 +30,9 @@ describe('YAML Folding', () => {
       bbb: ccc
     `;
     const doc = setupTextDocument(yaml);
-    const ranges = getFoldingRanges(doc, context);
-    expect(ranges.length).to.equal(1);
-    expect(ranges[0]).to.be.eql(FoldingRange.create(2, 3, 4, 14));
+    const ranges = getFoldingRanges(doc, context)!;
+    expect(ranges!.length).to.equal(1);
+    expect(ranges![0]).to.be.eql(FoldingRange.create(2, 3, 4, 14));
   });
 
   it('should provide folding ranges for array', () => {
@@ -43,15 +43,15 @@ describe('YAML Folding', () => {
     ccc: ddd
     `;
     const doc = setupTextDocument(yaml);
-    const ranges = getFoldingRanges(doc, context);
-    expect(ranges.length).to.equal(1);
-    expect(ranges[0]).to.be.eql(FoldingRange.create(2, 3, 4, 11));
+    const ranges = getFoldingRanges(doc, context)!;
+    expect(ranges!.length).to.equal(1);
+    expect(ranges![0]).to.be.eql(FoldingRange.create(2, 3, 4, 11));
   });
 
   it('should provide folding ranges for multiple documents', () => {
     const yaml = `---\nname: jack\nage: 22\n---\ncwd: test\n`;
     const doc = setupTextDocument(yaml);
-    const ranges = getFoldingRanges(doc, context);
+    const ranges = getFoldingRanges(doc, context)!;
     expect(ranges.length).to.equal(2);
     expect(ranges[0]).to.be.eql(FoldingRange.create(1, 2, 0, 7));
     expect(ranges[1]).to.be.eql(FoldingRange.create(4, 4, 0, 9));
@@ -60,7 +60,7 @@ describe('YAML Folding', () => {
   it('should not include comments on folding ranges', () => {
     const yaml = `# a comment\nname: jack\n# age comment\nage:\n  - october`;
     const doc = setupTextDocument(yaml);
-    const ranges = getFoldingRanges(doc, context);
+    const ranges = getFoldingRanges(doc, context)!;
     expect(ranges.length).to.equal(1);
     expect(ranges[0]).to.be.eql(FoldingRange.create(3, 4, 0, 11));
   });
@@ -74,7 +74,7 @@ describe('YAML Folding', () => {
           zzz
     `;
     const doc = setupTextDocument(yaml);
-    const ranges = getFoldingRanges(doc, context);
+    const ranges = getFoldingRanges(doc, context)!;
     expect(ranges).to.deep.include.members([FoldingRange.create(1, 2, 4, 14), FoldingRange.create(3, 5, 4, 13)]);
   });
 
@@ -87,7 +87,7 @@ describe('YAML Folding', () => {
     ccc: ddd
     `;
     const doc = setupTextDocument(yaml);
-    const ranges = getFoldingRanges(doc, context);
+    const ranges = getFoldingRanges(doc, context)!;
     expect(ranges).to.deep.include.members([FoldingRange.create(2, 4, 4, 18), FoldingRange.create(3, 4, 8, 18)]);
   });
 
@@ -100,7 +100,7 @@ describe('YAML Folding', () => {
     ccc: ddd
     `;
     const doc = setupTextDocument(yaml);
-    const ranges = getFoldingRanges(doc, context);
+    const ranges = getFoldingRanges(doc, context)!;
     expect(ranges).to.deep.include.members([FoldingRange.create(2, 4, 4, 18), FoldingRange.create(3, 4, 6, 18)]);
   });
 
@@ -113,7 +113,7 @@ SecondDict:
   SecondDictFirstKey: foo`;
 
     const doc = setupTextDocument(yaml);
-    const ranges = getFoldingRanges(doc, context);
+    const ranges = getFoldingRanges(doc, context)!;
     expect(ranges).to.deep.include.members([FoldingRange.create(1, 3, 2, 11)]);
   });
 
@@ -127,7 +127,7 @@ SecondDict:
     name: two`;
 
     const doc = setupTextDocument(yaml);
-    const ranges = getFoldingRanges(doc, context);
+    const ranges = getFoldingRanges(doc, context)!;
     expect(ranges).to.deep.include.members([FoldingRange.create(1, 4, 2, 15)]);
   });
 
@@ -139,7 +139,7 @@ SecondDict:
         - 2
     `;
 
-    const warnings = [];
+    const warnings: string[] = [];
 
     const doc = setupTextDocument(yaml);
 
@@ -147,14 +147,14 @@ SecondDict:
       rangeLimit: 10,
       onRangeLimitExceeded: (uri) => warnings.push(uri),
     });
-    expect(unlimitedRanges.length).to.equal(2);
+    expect(unlimitedRanges!.length).to.equal(2);
     expect(warnings).to.be.empty;
 
     const limitedRanges = getFoldingRanges(doc, {
       rangeLimit: 1,
       onRangeLimitExceeded: (uri) => warnings.push(uri),
     });
-    expect(limitedRanges.length).to.equal(1);
+    expect(limitedRanges!.length).to.equal(1);
     expect(warnings).to.deep.equal([TEST_URI]);
   });
 });

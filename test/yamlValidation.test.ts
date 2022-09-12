@@ -27,7 +27,7 @@ describe('YAML Validation Tests', () => {
     const testTextDocument = setupSchemaIDTextDocument(content, customSchemaID);
     yamlSettings.documents = new TextDocumentTestManager();
     (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
-    return validationHandler.validateTextDocument(testTextDocument);
+    return validationHandler.validateTextDocument(testTextDocument) as Promise<Diagnostic[]>;
   }
   describe('TAB Character diagnostics', () => {
     it('Should report if TAB character present', async () => {

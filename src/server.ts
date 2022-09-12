@@ -19,7 +19,7 @@ import { Telemetry } from './languageserver/telemetry';
 nls.config(process.env['VSCODE_NLS_CONFIG'] as any);
 
 // Create a connection for the server.
-let connection: Connection = null;
+let connection: Connection;
 
 if (process.argv.indexOf('--stdio') === -1) {
   connection = createConnection(ProposedFeatures.all);

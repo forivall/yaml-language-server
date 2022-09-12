@@ -18,7 +18,7 @@ export const schemaRequestHandler = (
   connection: Connection,
   uri: string,
   workspaceFolders: WorkspaceFolder[],
-  workspaceRoot: URI,
+  workspaceRoot: URI | null,
   useVSCodeContentRequest: boolean,
   fs: FileSystem
 ): Promise<string> => {

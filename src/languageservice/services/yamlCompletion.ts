@@ -54,7 +54,7 @@ interface CompletionItem extends CompletionItemBase {
   parent?: ParentCompletionItemOptions;
 }
 interface CompletionsCollector {
-  add(suggestion: CompletionItem): void;
+  add(suggestion: CompletionItem & Required<Pick<CompletionItem, 'insertText'>>): void;
   error(message: string): void;
   log(message: string): void;
   getNumberOfProposals(): number;
@@ -66,15 +66,15 @@ interface InsertText {
 }
 
 export class YamlCompletion {
-  private customTags: string[];
+  private customTags: string[] = [];
   private completionEnabled = true;
   private configuredIndentation: string | undefined;
-  private yamlVersion: YamlVersion;
+  private yamlVersion?: YamlVersion;
   private indentation: string;
   private arrayPrefixIndentation = '';
   private supportsMarkdown: boolean | undefined;
-  private disableDefaultProperties: boolean;
-  private parentSkeletonSelectedFirst: boolean;
+  private disableDefaultProperties?: boolean;
+  private parentSkeletonSelectedFirst?: boolean;
 
   constructor(
     private schemaService: YAMLSchemaService,
@@ -85,9 +85,9 @@ export class YamlCompletion {
 
   configure(languageSettings: LanguageSettings): void {
     if (languageSettings) {
-      this.completionEnabled = languageSettings.completion;
+      this.completionEnabled = languageSettings.completion ?? true;
     }
-    this.customTags = languageSettings.customTags;
+    this.customTags = languageSettings.customTags ?? [];
     this.yamlVersion = languageSettings.yamlVersion;
     this.configuredIndentation = languageSettings.indentation;
     this.disableDefaultProperties = languageSettings.disableDefaultProperties;
@@ -100,6 +100,9 @@ export class YamlCompletion {
       return result;
     }
     const doc = this.yamlDocument.getYamlDocument(document, { customTags: this.customTags, yamlVersion: this.yamlVersion }, true);
+    if (!doc) {
+      return result;
+    }
     const textBuffer = new TextBuffer(document);
 
     if (!this.configuredIndentation) {
@@ -134,7 +137,7 @@ export class YamlCompletion {
     const areOnlySpacesAfterPosition = /^[ ]+\n?$/.test(lineAfterPosition);
 
     this.arrayPrefixIndentation = '';
-    let overwriteRange: Range = null;
+    let overwriteRange: Range | null = null;
     if (areOnlySpacesAfterPosition) {
       overwriteRange = Range.create(position, Position.create(position.line, lineContent.length));
       const isOnlyWhitespace = lineContent.trim().length === 0;
@@ -149,13 +152,13 @@ export class YamlCompletion {
           );
         }
       }
-    } else if (node && isScalar(node) && node.value === 'null') {
+    } else if (node && isScalar(node) && node?.range && node.value === 'null') {
       const nodeStartPos = document.positionAt(node.range[0]);
       nodeStartPos.character += 1;
       const nodeEndPos = document.positionAt(node.range[2]);
       nodeEndPos.character += 1;
       overwriteRange = Range.create(nodeStartPos, nodeEndPos);
-    } else if (node && isScalar(node) && node.value) {
+    } else if (node && isScalar(node) && node?.range && node.value) {
       const start = document.positionAt(node.range[0]);
       if (offset > 0 && start.character > 0 && text.charAt(offset - 1) === '-') {
         start.character -= 1;
@@ -175,11 +178,11 @@ export class YamlCompletion {
     const proposed: { [key: string]: CompletionItem } = {};
     const existingProposeItem = '__';
     const collector: CompletionsCollector = {
-      add: (completionItem: CompletionItem) => {
+      add: (completionItem) => {
         const addSuggestionForParent = function (completionItem: CompletionItem): void {
           const existsInYaml = proposed[completionItem.label]?.label === existingProposeItem;
           //don't put to parent suggestion if already in yaml
-          if (existsInYaml) {
+          if (existsInYaml || !completionItem.parent || !completionItem.insertText) {
             return;
           }
           const schema = completionItem.parent.schema;
@@ -190,23 +193,29 @@ export class YamlCompletion {
             (item: CompletionItem) => item.parent?.schema === schema && item.kind === parentCompletionKind
           );
 
-          if (parentCompletion && parentCompletion.parent.insertTexts.includes(completionItem.insertText)) {
+          if (parentCompletion?.parent?.insertTexts?.includes(completionItem.insertText)) {
             // already exists in the parent
             return;
           } else if (!parentCompletion) {
             // create a new parent
             parentCompletion = {
               ...completionItem,
+              parent: {
+                ...completionItem.parent,
+                insertTexts: [completionItem.insertText],
+              },
               label: schemaType,
               documentation: schemaDescription,
               sortText: '_' + schemaType, // this parent completion goes first,
               kind: parentCompletionKind,
             };
-            parentCompletion.parent.insertTexts = [completionItem.insertText];
             result.items.push(parentCompletion);
           } else {
             // add to the existing parent
-            parentCompletion.parent.insertTexts.push(completionItem.insertText);
+            const parent = parentCompletion.parent;
+            if (parent) {
+              (parent.insertTexts ?? (parent.insertTexts = [])).push(completionItem.insertText);
+            }
           }
         };
 
@@ -251,7 +260,7 @@ export class YamlCompletion {
         const existing = proposed[label];
         const isInsertTextDifferent =
           existing?.label !== existingProposeItem && existing?.insertText !== completionItem.insertText;
-        if (!existing) {
+        if (!existing?.insertText) {
           proposed[label] = completionItem;
           result.items.push(completionItem);
         } else if (isInsertTextDifferent) {
@@ -325,7 +334,7 @@ export class YamlCompletion {
         return result;
       }
 
-      let currentProperty: YamlNode = null;
+      let currentProperty: YamlNode | null = null;
 
       if (!node) {
         if (!currentDoc.internalDocument.contents || isScalar(currentDoc.internalDocument.contents)) {
@@ -587,7 +596,7 @@ export class YamlCompletion {
       if (isParentCompletionItem(completionItem)) {
         const indent = completionItem.parent.indent || '';
 
-        const reindexedTexts = reindexText(completionItem.parent.insertTexts);
+        const reindexedTexts = reindexText(completionItem.parent.insertTexts ?? []);
 
         // add indent to each object property and join completion item texts
         let insertText = reindexedTexts.join(`\n${indent}`);
@@ -609,7 +618,7 @@ export class YamlCompletion {
           kind: MarkupKind.Markdown,
           value: [...originalDocumentation, '```yaml', indent + mdText, '```'].join('\n'),
         };
-        delete completionItem.parent;
+        delete (completionItem as CompletionItem).parent;
       }
     });
   }
@@ -635,7 +644,7 @@ export class YamlCompletion {
     overwriteRange: Range,
     doComplete: boolean
   ): void {
-    const matchingSchemas = doc.getMatchingSchemas(schema.schema, -1, null, doComplete);
+    const matchingSchemas = doc.getMatchingSchemas(schema.schema, -1, undefined, doComplete);
     const existingKey = textBuffer.getText(overwriteRange);
     const lineContent = textBuffer.getLineContent(overwriteRange.start.line);
     const hasOnlyWhitespace = lineContent.trim().length === 0;
@@ -669,7 +678,7 @@ export class YamlCompletion {
 
                 if (typeof propertySchema === 'object' && !propertySchema.deprecationMessage && !propertySchema['doNotSuggest']) {
                   let identCompensation = '';
-                  if (nodeParent && isSeq(nodeParent) && node.items.length <= 1 && !hasOnlyWhitespace) {
+                  if (nodeParent && isSeq(nodeParent) && node.items.length <= 1 && !hasOnlyWhitespace && node.range) {
                     // because there is a slash '-' to prevent the properties generated to have the correct
                     // indent
                     const sourceText = textBuffer.getText();
@@ -684,7 +693,7 @@ export class YamlCompletion {
 
                   // if check that current node has last pair with "null" value and key witch match key from schema,
                   // and if schema has array definition it add completion item for array item creation
-                  let pair: Pair;
+                  let pair: Pair | undefined;
                   if (
                     propertySchema.type === 'array' &&
                     (pair = node.items.find(
@@ -732,7 +741,7 @@ export class YamlCompletion {
                   const isNodeNull =
                     (isScalar(originalNode) && originalNode.value === null) ||
                     (isMap(originalNode) && originalNode.items.length === 0);
-                  const existsParentCompletion = schema.schema.required?.length > 0;
+                  const existsParentCompletion = (schema.schema.required?.length ?? 0) > 0;
                   if (!this.parentSkeletonSelectedFirst || !isNodeNull || !existsParentCompletion) {
                     collector.add({
                       kind: CompletionItemKind.Property,
@@ -775,7 +784,7 @@ export class YamlCompletion {
         }
 
         if (schema.schema.propertyNames && schema.schema.additionalProperties && schema.schema.type === 'object') {
-          const propertyNameSchema = asSchema(schema.schema.propertyNames);
+          const propertyNameSchema = asSchema(schema.schema.propertyNames) ?? {};
           const label = propertyNameSchema.title || 'property';
           collector.add({
             kind: CompletionItemKind.Property,
@@ -822,15 +831,16 @@ export class YamlCompletion {
   private getValueCompletions(
     schema: ResolvedSchema,
     doc: SingleYAMLDocument,
-    node: YamlNode,
+    nodeParam: YamlNode,
     offset: number,
     document: TextDocument,
     collector: CompletionsCollector,
     types: { [type: string]: boolean },
     doComplete: boolean
   ): void {
-    let parentKey: string = null;
+    let parentKey: string | null = null;
 
+    let node: YamlNode | undefined = nodeParam;
     if (node && isScalar(node)) {
       node = doc.getParent(node);
     }
@@ -851,7 +861,7 @@ export class YamlCompletion {
 
     if (node && (parentKey !== null || isSeq(node))) {
       const separatorAfter = '';
-      const matchingSchemas = doc.getMatchingSchemas(schema.schema, -1, null, doComplete);
+      const matchingSchemas = doc.getMatchingSchemas(schema.schema, -1, undefined, doComplete);
       for (const s of matchingSchemas) {
         if (s.node.internalNode === node && !s.inverted && s.schema) {
           if (s.schema.items) {
@@ -908,7 +918,7 @@ export class YamlCompletion {
               }
             }
           }
-          if (s.schema.properties) {
+          if (s.schema.properties && parentKey != null) {
             const propertySchema = s.schema.properties[parentKey];
             if (propertySchema) {
               this.addSchemaValueCompletions(propertySchema, separatorAfter, collector, types);
@@ -931,14 +941,14 @@ export class YamlCompletion {
 
   private getInsertTextForProperty(
     key: string,
-    propertySchema: JSONSchema,
+    propertySchema: JSONSchema | null,
     separatorAfter: string,
     indent = this.indentation
   ): string {
     const propertyText = this.getInsertTextForValue(key, '', 'string');
     const resultText = propertyText + ':';
 
-    let value: string;
+    let value: string | undefined;
     let nValueProposals = 0;
     if (propertySchema) {
       let type = Array.isArray(propertySchema.type) ? propertySchema.type[0] : propertySchema.type;
@@ -1055,7 +1065,7 @@ export class YamlCompletion {
       return { insertText, insertIndex };
     }
 
-    Object.keys(schema.properties).forEach((key: string) => {
+    for (const key of Object.keys(schema.properties)) {
       const propertySchema = schema.properties[key] as JSONSchema;
       let type = Array.isArray(propertySchema.type) ? propertySchema.type[0] : propertySchema.type;
       if (!type) {
@@ -1132,7 +1142,7 @@ export class YamlCompletion {
             break;
         }
       }
-    });
+    }
     if (insertText.trim().length === 0) {
       insertText = `${indent}$${insertIndex++}\n`;
     }
@@ -1178,8 +1188,7 @@ export class YamlCompletion {
     return { insertText, insertIndex };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private getInsertTextForGuessedValue(value: any, separatorAfter: string, type: string): string {
+  private getInsertTextForGuessedValue(value: unknown, separatorAfter: string, type: string | undefined): string {
     switch (typeof value) {
       case 'object':
         if (value === null) {
@@ -1206,8 +1215,7 @@ export class YamlCompletion {
     return text.replace(/[\\$}]/g, '\\$&'); // escape $, \ and }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private getInsertTextForValue(value: any, separatorAfter: string, type: string | string[]): string {
+  private getInsertTextForValue(value: unknown, separatorAfter: string, type: string | string[] | undefined): string {
     if (value === null) {
       return 'null'; // replace type null with string 'null'
     }
@@ -1263,7 +1271,7 @@ export class YamlCompletion {
     schema: JSONSchemaRef,
     separatorAfter: string,
     collector: CompletionsCollector,
-    types: unknown,
+    types: { [type: string]: boolean },
     isArray?: boolean
   ): void {
     if (typeof schema === 'object') {
@@ -1288,7 +1296,7 @@ export class YamlCompletion {
     }
   }
 
-  private collectTypes(schema: JSONSchema, types: unknown): void {
+  private collectTypes(schema: JSONSchema, types: { [type: string]: boolean }): void {
     if (Array.isArray(schema.enum) || isDefined(schema.const)) {
       return;
     }
@@ -1311,16 +1319,16 @@ export class YamlCompletion {
     let hasProposals = false;
     if (isDefined(schema.default)) {
       let type = schema.type;
-      let value = schema.default;
+      let value: unknown = schema.default;
       for (let i = arrayDepth; i > 0; i--) {
         value = [value];
         type = 'array';
       }
-      let label;
+      let label: string;
       if (typeof value == 'object') {
         label = 'Default value';
       } else {
-        label = (value as unknown).toString().replace(doubleQuotesEscapeRegExp, '"');
+        label = String(value).replace(doubleQuotesEscapeRegExp, '"');
       }
       collector.add({
         kind: this.getSuggestionKind(type),
@@ -1362,7 +1370,7 @@ export class YamlCompletion {
     schema: JSONSchema,
     separatorAfter: string,
     collector: CompletionsCollector,
-    isArray: boolean
+    isArray: boolean | undefined
   ): void {
     if (isDefined(schema.const) && !isArray) {
       collector.add({
@@ -1416,7 +1424,7 @@ export class YamlCompletion {
         let value = s.body;
         let label = s.label;
         let insertText: string;
-        let filterText: string;
+        let filterText: string | undefined;
         if (isDefined(value)) {
           const type = s.type || schema.type;
           if (arrayDepth === 0 && type === 'array') {
@@ -1446,6 +1454,8 @@ export class YamlCompletion {
           insertText = prefix + indent + s.bodyText.split('\n').join('\n' + indent) + suffix + separatorAfter;
           label = label || insertText;
           filterText = insertText.replace(/[\n]/g, ''); // remove new lines
+        } else {
+          continue;
         }
         collector.add({
           kind: s.suggestionKind || this.getSuggestionKind(type),
@@ -1566,7 +1576,7 @@ export class YamlCompletion {
     return text.substring(i + 1, offset);
   }
 
-  private fromMarkup(markupString: string): MarkupContent | undefined {
+  private fromMarkup(markupString: string | undefined): MarkupContent | undefined {
     if (markupString && this.doesSupportMarkdown()) {
       return {
         kind: MarkupKind.Markdown,
@@ -1585,7 +1595,8 @@ export class YamlCompletion {
         Array.isArray(completion.completionItem.documentationFormat) &&
         completion.completionItem.documentationFormat.indexOf(MarkupKind.Markdown) !== -1;
     }
-    return this.supportsMarkdown;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return this.supportsMarkdown!;
   }
 
   private findItemAtOffset(seqNode: YAMLSeq, doc: TextDocument, offset: number): number {
@@ -1664,6 +1675,6 @@ function evaluateTab1Symbol(value: string): string {
   return result;
 }
 
-function isParentCompletionItem(item: CompletionItemBase): item is CompletionItem {
-  return 'parent' in item;
+function isParentCompletionItem(item: CompletionItemBase): item is CompletionItem & Required<Pick<CompletionItem, 'parent'>> {
+  return 'parent' in item && (item as { parent?: unknown }).parent != null;
 }

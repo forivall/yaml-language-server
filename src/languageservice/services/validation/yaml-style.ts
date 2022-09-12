@@ -15,7 +15,7 @@ export class YAMLStyleValidator implements AdditionalValidator {
     this.forbidSequence = settings.flowSequence === 'forbid';
   }
   validate(document: TextDocument, yamlDoc: SingleYAMLDocument): Diagnostic[] {
-    const result = [];
+    const result: Diagnostic[] = [];
     visit(yamlDoc.internalDocument, (key, node) => {
       if (this.forbidMapping && isMap(node) && node.srcToken?.type === 'flow-collection') {
         result.push(
@@ -42,6 +42,10 @@ export class YAMLStyleValidator implements AdditionalValidator {
   }
 
   private getRangeOf(document: TextDocument, node: FlowCollection): Range {
-    return Range.create(document.positionAt(node.start.offset), document.positionAt(node.end.pop().offset));
+    const endToken = node.end[node.end.length - 1] || node.start;
+    return Range.create(
+      document.positionAt(node.start.offset),
+      document.positionAt(endToken.offset /* + endToken.source.length */)
+    );
   }
 }

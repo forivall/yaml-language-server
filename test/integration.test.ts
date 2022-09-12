@@ -44,7 +44,7 @@ describe('Kubernetes Integration Tests', () => {
       yamlSettings.documents = new TextDocumentTestManager();
       (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
       yamlSettings.specificValidatorPaths = ['*.yml', '*.yaml'];
-      return validationHandler.validateTextDocument(testTextDocument);
+      return validationHandler.validateTextDocument(testTextDocument) as Promise<Diagnostic[]>;
     }
 
     //Validating basic nodes
@@ -312,7 +312,7 @@ describe('Kubernetes Integration Tests', () => {
       return languageHandler.hoverHandler({
         position: testTextDocument.positionAt(offset),
         textDocument: testTextDocument,
-      });
+      }) as Promise<Hover>;
     }
 
     it('Hover on incomplete kubernetes document', async () => {

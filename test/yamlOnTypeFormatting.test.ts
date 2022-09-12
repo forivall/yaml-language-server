@@ -37,7 +37,7 @@ describe('YAML On Type Formatter', () => {
     const pos = Position.create(2, 2);
     const params = createParams(pos);
     const result = doDocumentOnTypeFormatting(doc, params);
-    expect(result[0]).to.eqls(TextEdit.insert(pos, '- '));
+    expect(result![0]).to.eqls(TextEdit.insert(pos, '- '));
   });
 
   it('should add indentation for mapping in array', () => {

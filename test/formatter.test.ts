@@ -32,7 +32,7 @@ describe('Formatter Tests', () => {
         return languageHandler.formatterHandler({
           options,
           textDocument: testTextDocument,
-        });
+        }) as TextEdit[];
       }
 
       it('Formatting works without custom tags', () => {

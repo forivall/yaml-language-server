@@ -51,7 +51,7 @@ describe('Multiple Documents Validation Tests', () => {
     function validatorSetup(content: string): Promise<Diagnostic[]> {
       const testTextDocument = setupTextDocument(content);
       languageService.configure(languageSettingsSetup.languageSettings);
-      return validationHandler.validateTextDocument(testTextDocument);
+      return validationHandler.validateTextDocument(testTextDocument) as Promise<Diagnostic[]>;
     }
 
     function hoverSetup(content: string, position: number): Promise<Hover> {
@@ -62,7 +62,7 @@ describe('Multiple Documents Validation Tests', () => {
       return languageHandler.hoverHandler({
         position: testTextDocument.positionAt(position),
         textDocument: testTextDocument,
-      });
+      }) as Promise<Hover>;
     }
 
     it('Should validate multiple documents', (done) => {

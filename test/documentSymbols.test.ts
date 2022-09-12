@@ -48,7 +48,7 @@ describe('Document Symbols Tests', () => {
       (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
       return languageHandler.documentSymbolHandler({
         textDocument: testTextDocument,
-      });
+      })!;
     }
 
     it('Document is empty', (done) => {
@@ -156,7 +156,7 @@ describe('Document Symbols Tests', () => {
       (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
       return languageHandler.documentSymbolHandler({
         textDocument: testTextDocument,
-      });
+      })!;
     }
 
     it('Document is empty', (done) => {
@@ -305,8 +305,8 @@ describe('Document Symbols Tests', () => {
 
       const symbols = parseHierarchicalSetup(limitContent) as DocumentSymbol[];
       assert.equal(symbols.length, 2);
-      assert.equal(symbols[0].children.length, 1);
-      assert.equal(symbols[1].children.length, 0);
+      assert.equal(symbols[0].children!.length, 1);
+      assert.equal(symbols[1].children!.length, 0);
 
       const el = createExpectedDocumentSymbolNoDetail('0', SymbolKind.Number, 1, 8, 1, 9, 1, 8, 1, 9, []);
       const root = createExpectedDocumentSymbol('a', SymbolKind.Array, 1, 4, 1, 16, 1, 4, 1, 5, [el]);
@@ -320,8 +320,8 @@ describe('Document Symbols Tests', () => {
       const content = 'items:\n  1: test\n  2: test';
       const symbols = parseHierarchicalSetup(content);
       assert.equal(symbols.length, 1);
-      const child1 = createExpectedDocumentSymbol('1', SymbolKind.String, 1, 2, 1, 9, 1, 2, 1, 3, undefined, 'test');
-      const child2 = createExpectedDocumentSymbol('2', SymbolKind.String, 2, 2, 2, 9, 2, 2, 2, 3, undefined, 'test');
+      const child1 = createExpectedDocumentSymbol('1', SymbolKind.String, 1, 2, 1, 9, 1, 2, 1, 3, undefined!, 'test');
+      const child2 = createExpectedDocumentSymbol('2', SymbolKind.String, 2, 2, 2, 9, 2, 2, 2, 3, undefined!, 'test');
       const children = [child1, child2];
       assert.deepEqual(symbols[0], createExpectedDocumentSymbol('items', SymbolKind.Module, 0, 0, 2, 9, 0, 0, 0, 5, children));
     });

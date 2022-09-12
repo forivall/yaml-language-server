@@ -79,7 +79,7 @@ describe('JSON Schema', () => {
     service
       .getResolvedSchema('https://myschemastore/main')
       .then((solvedSchema) => {
-        assert.deepEqual(solvedSchema.schema.properties['child'], {
+        assert.deepEqual(solvedSchema!.schema.properties!['child'], {
           id: 'https://myschemastore/child',
           type: 'bool',
           description: 'Test description',
@@ -127,7 +127,7 @@ describe('JSON Schema', () => {
     service
       .getResolvedSchema('https://json.schemastore.org/swagger-2.0')
       .then((fs) => {
-        assert.deepEqual(fs.schema.properties['responseValue'], {
+        assert.deepEqual(fs!.schema.properties!['responseValue'], {
           type: 'object',
           required: ['$ref'],
           properties: { $ref: { type: 'string' } },
@@ -178,19 +178,19 @@ describe('JSON Schema', () => {
     service
       .getResolvedSchema('https://myschemastore/main/schema1.json')
       .then((fs) => {
-        assert.deepEqual(fs.schema.properties['p1'], {
+        assert.deepEqual(fs!.schema.properties!['p1'], {
           type: 'string',
           enum: ['object'],
           _$ref: 'schema2.json#/definitions/hello',
           url: 'https://myschemastore/main/schema2.json',
         });
-        assert.deepEqual(fs.schema.properties['p2'], {
+        assert.deepEqual(fs!.schema.properties!['p2'], {
           type: 'string',
           enum: ['object'],
           _$ref: './schema2.json#/definitions/hello',
           url: 'https://myschemastore/main/schema2.json',
         });
-        assert.deepEqual(fs.schema.properties['p3'], {
+        assert.deepEqual(fs!.schema.properties!['p3'], {
           type: 'string',
           enum: ['object'],
           _$ref: '/main/schema2.json#/definitions/hello',
@@ -233,7 +233,7 @@ describe('JSON Schema', () => {
     service
       .getResolvedSchema('main')
       .then((fs) => {
-        const section = fs.getSection(['child', 'grandchild']);
+        const section = fs!.getSection(['child', 'grandchild'])!;
         assert.equal(section.description, 'Meaning of Life');
       })
       .then(
@@ -275,7 +275,7 @@ describe('JSON Schema', () => {
     service
       .getResolvedSchema('main')
       .then((fs) => {
-        const section = fs.getSection(['child', '0', 'grandchild']);
+        const section = fs!.getSection(['child', '0', 'grandchild'])!;
         assert.equal(section.description, 'Meaning of Life');
       })
       .then(
@@ -308,7 +308,7 @@ describe('JSON Schema', () => {
     service
       .getResolvedSchema('main')
       .then((fs) => {
-        const section = fs.getSection(['child', 'grandchild']);
+        const section = fs!.getSection(['child', 'grandchild'])!;
         assert.strictEqual(section, undefined);
       })
       .then(
@@ -344,7 +344,7 @@ describe('JSON Schema', () => {
     service
       .getSchemaForResource('test.json', undefined)
       .then((schema) => {
-        const section = schema.getSection(['child', 'grandchild']);
+        const section = schema!.getSection(['child', 'grandchild'])!;
         assert.equal(section.description, 'Meaning of Life');
       })
       .then(
@@ -377,7 +377,7 @@ describe('JSON Schema', () => {
 
     service.registerExternalSchema(id, ['*.json'], schema);
 
-    const result = await service.getSchemaForResource('test.json', undefined);
+    const result = (await service.getSchemaForResource('test.json', undefined))!;
 
     expect(result.schema.url).equal(id);
   });
@@ -463,11 +463,11 @@ describe('JSON Schema', () => {
     });
 
     const fs = await service.getResolvedSchema('https://myschemastore/main/schema1.json');
-    assert.deepEqual(fs.schema.properties['apiVersion'], {
+    assert.deepEqual(fs!.schema.properties!['apiVersion'], {
       type: 'string',
       enum: ['v2', 'v3'],
     });
-    assert.deepEqual(fs.schema.properties['kind'], {
+    assert.deepEqual(fs!.schema.properties!['kind'], {
       type: 'string',
       enum: ['Pod'],
     });
@@ -500,13 +500,13 @@ describe('JSON Schema', () => {
       schema: 'https://myschemastore/main/schema1.json',
     } as SchemaDeletions);
 
-    const fs = await service.getResolvedSchema('https://myschemastore/main/schema1.json');
-    assert.notDeepEqual(fs.schema.properties['apiVersion'], {
+    const fs = (await service.getResolvedSchema('https://myschemastore/main/schema1.json'))!;
+    assert.notDeepEqual(fs.schema.properties!['apiVersion'], {
       type: 'string',
       enum: ['v2', 'v3'],
     });
-    assert.equal(fs.schema.properties['apiVersion'], undefined);
-    assert.deepEqual(fs.schema.properties['kind'], {
+    assert.equal(fs.schema.properties!['apiVersion'], undefined);
+    assert.deepEqual(fs!.schema.properties!['kind'], {
       type: 'string',
       enum: ['Pod'],
     });
@@ -541,7 +541,7 @@ describe('JSON Schema', () => {
       schema: KUBERNETES_SCHEMA_URL,
     });
 
-    const fs = await service.getResolvedSchema(KUBERNETES_SCHEMA_URL);
+    const fs = (await service.getResolvedSchema(KUBERNETES_SCHEMA_URL))!;
     assert.deepEqual((fs.schema as any).oneOf[1].properties['kind']['enum'], ['v2', 'v3']);
   });
 
@@ -556,7 +556,7 @@ describe('JSON Schema', () => {
       schema: KUBERNETES_SCHEMA_URL,
     });
 
-    const fs = await service.getResolvedSchema(KUBERNETES_SCHEMA_URL);
+    const fs = (await service.getResolvedSchema(KUBERNETES_SCHEMA_URL))!;
     assert.equal((fs.schema as any).oneOf[1].properties['kind']['enum'], undefined);
   });
 
@@ -566,7 +566,7 @@ describe('JSON Schema', () => {
       enum: ['test1', 'test2'],
     });
 
-    const hello_world_schema = await service.getResolvedSchema('hello_world');
+    const hello_world_schema = (await service.getResolvedSchema('hello_world'))!;
     assert.deepEqual(hello_world_schema.schema.enum, ['test1', 'test2']);
   });
 
@@ -756,7 +756,7 @@ describe('JSON Schema', () => {
       checkReturnSchemaUrl('# yaml-language-server: $notschema=url1', undefined);
     });
 
-    function checkReturnSchemaUrl(modeline: string, expectedResult: string): void {
+    function checkReturnSchemaUrl(modeline: string, expectedResult?: string): void {
       const yamlDoc = new parser.SingleYAMLDocument(new LineCounter());
       yamlDoc.lineComments = [modeline];
       assert.strictEqual(getSchemaFromModeline(yamlDoc), expectedResult);

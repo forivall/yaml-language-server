@@ -31,11 +31,17 @@ import {
 } from './jsonParser07';
 
 type NodeRange = [number, number, number];
+const emptyNodeRange: NodeRange = [-1, -1, -1];
 
 const maxRefCount = 1000;
 let refDepth = 0;
 
-export function convertAST(parent: ASTNode, node: YamlNode, doc: Document, lineCounter: LineCounter): ASTNode | undefined {
+export function convertAST(
+  parent: ASTNode | undefined,
+  node: YamlNode,
+  doc: Document,
+  lineCounter: LineCounter
+): ASTNode | undefined | null {
   if (!parent) {
     // first invocation
     refDepth = 0;
@@ -65,12 +71,17 @@ export function convertAST(parent: ASTNode, node: YamlNode, doc: Document, lineC
   }
 }
 
-function convertMap(node: YAMLMap<unknown, unknown>, parent: ASTNode, doc: Document, lineCounter: LineCounter): ASTNode {
+function convertMap(
+  node: YAMLMap<unknown, unknown>,
+  parent: ASTNode | undefined,
+  doc: Document,
+  lineCounter: LineCounter
+): ASTNode {
   let range: NodeRange;
   if (node.flow && !node.range) {
     range = collectFlowMapRange(node);
   } else {
-    range = node.range;
+    range = node.range ?? emptyNodeRange;
   }
   const result = new ObjectASTNodeImpl(parent, node, ...toFixedOffsetLength(range, lineCounter));
   for (const it of node.items) {
@@ -81,23 +92,23 @@ function convertMap(node: YAMLMap<unknown, unknown>, parent: ASTNode, doc: Docum
   return result;
 }
 
-function convertPair(node: Pair, parent: ASTNode, doc: Document, lineCounter: LineCounter): ASTNode {
+function convertPair(node: Pair, parent: ASTNode | undefined, doc: Document, lineCounter: LineCounter): ASTNode {
   const keyNode = <Node>node.key;
   const valueNode = <Node>node.value;
-  const rangeStart = keyNode.range[0];
-  let rangeEnd = keyNode.range[1];
-  let nodeEnd = keyNode.range[2];
-  if (valueNode) {
-    rangeEnd = valueNode.range[1];
-    nodeEnd = valueNode.range[2];
+  let range: NodeRange | undefined;
+  if (keyNode.range) {
+    const rangeStart = keyNode.range[0];
+    let rangeEnd = keyNode.range[1];
+    let nodeEnd = keyNode.range[2];
+    if (valueNode.range) {
+      rangeEnd = valueNode.range[1];
+      nodeEnd = valueNode.range[2];
+    }
+    range = [rangeStart, rangeEnd, nodeEnd];
   }
 
   // Pair does not return a range using the key/value ranges to fake one.
-  const result = new PropertyASTNodeImpl(
-    parent as ObjectASTNodeImpl,
-    node,
-    ...toFixedOffsetLength([rangeStart, rangeEnd, nodeEnd], lineCounter)
-  );
+  const result = new PropertyASTNodeImpl(parent as ObjectASTNodeImpl, node, ...toFixedOffsetLength(range, lineCounter));
   if (isAlias(keyNode)) {
     const keyAlias = new StringASTNodeImpl(parent, keyNode, ...toOffsetLength(keyNode.range));
     keyAlias.value = keyNode.source;
@@ -105,11 +116,15 @@ function convertPair(node: Pair, parent: ASTNode, doc: Document, lineCounter: Li
   } else {
     result.keyNode = <StringASTNodeImpl>convertAST(result, keyNode, doc, lineCounter);
   }
-  result.valueNode = convertAST(result, valueNode, doc, lineCounter);
+  const convertedNode = convertAST(result, valueNode, doc, lineCounter);
+  if (!convertedNode) {
+    throw new Error('unable to convert pair');
+  }
+  result.valueNode = convertedNode;
   return result;
 }
 
-function convertSeq(node: YAMLSeq, parent: ASTNode, doc: Document, lineCounter: LineCounter): ASTNode {
+function convertSeq(node: YAMLSeq, parent: ASTNode | undefined, doc: Document, lineCounter: LineCounter): ASTNode {
   const result = new ArrayASTNodeImpl(parent, node, ...toOffsetLength(node.range));
   for (const it of node.items) {
     if (isNode(it)) {
@@ -123,7 +138,7 @@ function convertSeq(node: YAMLSeq, parent: ASTNode, doc: Document, lineCounter: 
   return result;
 }
 
-function convertScalar(node: Scalar, parent: ASTNode): ASTNode {
+function convertScalar(node: Scalar, parent: ASTNode | undefined): ASTNode {
   if (node.value === null) {
     return new NullASTNodeImpl(parent, node, ...toOffsetLength(node.range));
   }
@@ -145,17 +160,21 @@ function convertScalar(node: Scalar, parent: ASTNode): ASTNode {
     default: {
       // fail safe converting, we need to return some node anyway
       const result = new StringASTNodeImpl(parent, node, ...toOffsetLength(node.range));
-      result.value = node.source;
+      result.value = node.source ?? '';
       return result;
     }
   }
 }
 
-function convertAlias(node: Alias, parent: ASTNode, doc: Document, lineCounter: LineCounter): ASTNode {
+function convertAlias(node: Alias, parent: ASTNode | undefined, doc: Document, lineCounter: LineCounter): ASTNode {
   refDepth++;
   const resolvedNode = node.resolve(doc);
   if (resolvedNode) {
-    return convertAST(parent, resolvedNode, doc, lineCounter);
+    const resultNode = convertAST(parent, resolvedNode, doc, lineCounter);
+    if (!resultNode) {
+      throw new Error('Failed to convert Alias');
+    }
+    return resultNode;
   } else {
     const resultNode = new StringASTNodeImpl(parent, node, ...toOffsetLength(node.range));
     resultNode.value = node.source;
@@ -163,7 +182,10 @@ function convertAlias(node: Alias, parent: ASTNode, doc: Document, lineCounter: 
   }
 }
 
-export function toOffsetLength(range: NodeRange): [number, number] {
+export function toOffsetLength(range: NodeRange | null | undefined): [number, number?] {
+  if (!range) {
+    return [0];
+  }
   return [range[0], range[1] - range[0]];
 }
 
@@ -173,7 +195,10 @@ export function toOffsetLength(range: NodeRange): [number, number] {
  * @param lineCounter the line counter
  * @returns the offset and length
  */
-function toFixedOffsetLength(range: NodeRange, lineCounter: LineCounter): [number, number] {
+function toFixedOffsetLength(range: NodeRange | undefined, lineCounter: LineCounter): [number, number?] {
+  if (!range) {
+    return [0];
+  }
   const start = lineCounter.linePos(range[0]);
   const end = lineCounter.linePos(range[1]);
 

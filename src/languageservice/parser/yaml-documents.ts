@@ -28,8 +28,8 @@ export class SingleYAMLDocument extends JSONDocument {
   public currentDocIndex: number;
   private _lineComments: string[];
 
-  constructor(lineCounter?: LineCounter) {
-    super(null, []);
+  constructor(lineCounter: LineCounter) {
+    super(undefined, []);
     this.lineCounter = lineCounter;
   }
 
@@ -71,7 +71,11 @@ export class SingleYAMLDocument extends JSONDocument {
 
   set internalDocument(document: Document) {
     this._internalDocument = document;
-    this.root = convertAST(null, this._internalDocument.contents as Node, this._internalDocument, this.lineCounter);
+    const root = convertAST(undefined, this._internalDocument.contents as Node, this._internalDocument, this.lineCounter);
+    if (!root) {
+      throw new Error('Failed to set document');
+    }
+    this.root = root;
   }
 
   get internalDocument(): Document {
@@ -108,8 +112,8 @@ export class SingleYAMLDocument extends JSONDocument {
     const textAfterPosition = lineContent.substring(position.character);
     const spacesAfterPositionMatch = textAfterPosition.match(/^([ ]+)\n?$/);
     const areOnlySpacesAfterPosition = !!spacesAfterPositionMatch;
-    const countOfSpacesAfterPosition = spacesAfterPositionMatch?.[1].length;
-    let closestNode: Node;
+    const countOfSpacesAfterPosition = spacesAfterPositionMatch?.[1].length ?? 0;
+    let closestNode: Node | undefined = undefined;
     visit(this.internalDocument, (key, node: Node) => {
       if (!node) {
         return;
@@ -136,9 +140,10 @@ export class SingleYAMLDocument extends JSONDocument {
   }
 
   findClosestNode(offset: number, textBuffer: TextBuffer, configuredIndentation?: number): YamlNode {
-    let offsetDiff = this.internalDocument.range[2];
-    let maxOffset = this.internalDocument.range[0];
-    let closestNode: YamlNode;
+    const documentRange = this.internalDocument.range ?? [0, 0, 0];
+    let offsetDiff = documentRange[2];
+    let maxOffset = documentRange[0];
+    let closestNode: YamlNode | undefined;
     visit(this.internalDocument, (key, node: Node) => {
       if (!node) {
         return;
@@ -167,15 +172,15 @@ export class SingleYAMLDocument extends JSONDocument {
       closestNode = this.getProperParentByIndentation(indentation, closestNode, textBuffer, '', configuredIndentation);
     }
 
-    return closestNode;
+    return closestNode ?? (this.internalDocument.contents as Node);
   }
 
   private getProperParentByIndentation(
     indentation: number,
-    node: YamlNode,
+    node: YamlNode | undefined,
     textBuffer: TextBuffer,
     currentLine: string,
-    configuredIndentation: number,
+    configuredIndentation?: number,
     rootParent?: YamlNode
   ): YamlNode {
     if (!node) {
@@ -259,9 +264,11 @@ export class YamlDocuments {
    * @param addRootObject if true and document is empty add empty object {} to force schema usage
    * @returns the YAMLDocument
    */
-  getYamlDocument(document: TextDocument, parserOptions?: ParserOptions, addRootObject = false): YAMLDocument {
+  getYamlDocument(document: TextDocument, parserOptions?: ParserOptions, addRootObject = false): YAMLDocument | undefined {
     this.ensureCache(document, parserOptions ?? defaultOptions, addRootObject);
-    return this.cache.get(document.uri).document;
+    if (document.uri) {
+      return this.cache.get(document.uri)?.document;
+    }
   }
 
   /**
@@ -278,8 +285,9 @@ export class YamlDocuments {
     }
     const cacheEntry = this.cache.get(key);
     if (
-      cacheEntry.version !== document.version ||
-      (parserOptions.customTags && !isArrayEqual(cacheEntry.parserOptions.customTags, parserOptions.customTags))
+      cacheEntry &&
+      (cacheEntry.version !== document.version ||
+        (parserOptions.customTags && !isArrayEqual(cacheEntry.parserOptions.customTags, parserOptions.customTags)))
     ) {
       let text = document.getText();
       // if text is contains only whitespace wrap all text in object to force schema selection

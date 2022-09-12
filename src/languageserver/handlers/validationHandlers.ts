@@ -44,29 +44,28 @@ export class ValidationHandler {
     }
   }
 
-  validateTextDocument(textDocument: TextDocument): Promise<Diagnostic[]> {
+  async validateTextDocument(textDocument: TextDocument): Promise<Diagnostic[] | undefined> {
     if (!textDocument) {
       return;
     }
 
-    return this.languageService
-      .doValidation(textDocument, isKubernetesAssociatedDocument(textDocument, this.yamlSettings.specificValidatorPaths))
-      .then((diagnosticResults) => {
-        const diagnostics = [];
-        for (const diagnosticItem of diagnosticResults) {
-          // Convert all warnings to errors
-          if (diagnosticItem.severity === 2) {
-            diagnosticItem.severity = 1;
-          }
-          diagnostics.push(diagnosticItem);
-        }
-
-        const removeDuplicatesDiagnostics = removeDuplicatesObj(diagnostics);
-        this.connection.sendDiagnostics({
-          uri: textDocument.uri,
-          diagnostics: removeDuplicatesDiagnostics,
-        });
-        return removeDuplicatesDiagnostics;
-      });
+    const diagnosticResults = await this.languageService.doValidation(
+      textDocument,
+      isKubernetesAssociatedDocument(textDocument, this.yamlSettings.specificValidatorPaths)
+    );
+    const diagnostics: Diagnostic[] = [];
+    for (const diagnosticItem of diagnosticResults) {
+      // Convert all warnings to errors
+      if (diagnosticItem.severity === 2) {
+        diagnosticItem.severity = 1;
+      }
+      diagnostics.push(diagnosticItem);
+    }
+    const removeDuplicatesDiagnostics = removeDuplicatesObj(diagnostics);
+    this.connection.sendDiagnostics({
+      uri: textDocument.uri,
+      diagnostics: removeDuplicatesDiagnostics,
+    });
+    return removeDuplicatesDiagnostics;
   }
 }

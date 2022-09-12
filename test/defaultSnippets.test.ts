@@ -382,7 +382,7 @@ describe('Default Snippet Tests', () => {
       const result = await parseSetup(content);
       const item = result.items.find((i) => i.label === 'name');
       expect(item).is.not.undefined;
-      expect(item.textEdit.newText).to.be.equal('name: some');
+      expect(item!.textEdit!.newText).to.be.equal('name: some');
     });
   });
 });

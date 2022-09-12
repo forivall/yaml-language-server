@@ -34,10 +34,11 @@ export function binarySearch(array: number[], sought: number): number {
       upper = idx - 1;
     }
   }
+  throw new Error('binary search failed');
 }
 
 export function getLineStartPositions(text: string): number[] {
-  const lineStartPositions = [0];
+  const lineStartPositions: number[] = [0];
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
 

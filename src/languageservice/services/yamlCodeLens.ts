@@ -18,9 +18,12 @@ export class YamlCodeLens {
   constructor(private schemaService: YAMLSchemaService, private readonly telemetry: Telemetry) {}
 
   async getCodeLens(document: TextDocument): Promise<CodeLens[]> {
-    const result = [];
+    const result: CodeLens[] = [];
     try {
       const yamlDocument = yamlDocumentsCache.getYamlDocument(document);
+      if (!yamlDocument) {
+        throw new Error('Document unavailable');
+      }
       let schemaUrls = new Map<string, JSONSchema>();
       for (const currentYAMLDoc of yamlDocument.documents) {
         const schema = await this.schemaService.getSchemaForResource(document.uri, currentYAMLDoc);

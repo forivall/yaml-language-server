@@ -4,12 +4,23 @@
  *--------------------------------------------------------------------------------------------*/
 import { LanguageSettings, SchemasSettings } from '../../src/languageservice/yamlLanguageService';
 
+type DefinedLanguageSettings<T> = Omit<LanguageSettings, keyof T> &
+  {
+    [K in keyof T]: K extends keyof LanguageSettings
+      ? undefined extends T[K]
+        ? LanguageSettings[K]
+        : NonNullable<LanguageSettings[K]>
+      : T[K];
+  };
+const defineLanguageSettings = <T extends LanguageSettings>(settings: T & LanguageSettings): DefinedLanguageSettings<T> =>
+  settings as DefinedLanguageSettings<T>;
+
 export class ServiceSetup {
   /*
    * By default the service setup is going to have everything disabled
    * and each test is going to enable a feature with a with function call
    */
-  languageSettings: LanguageSettings = {
+  languageSettings = defineLanguageSettings({
     validate: false,
     hover: false,
     completion: false,
@@ -17,11 +28,11 @@ export class ServiceSetup {
     isKubernetes: false,
     schemas: [],
     customTags: [],
-    indentation: undefined,
+    indentation: undefined!,
     yamlVersion: '1.2',
     flowMapping: 'allow',
     flowSequence: 'allow',
-  };
+  });
 
   withValidate(): ServiceSetup {
     this.languageSettings.validate = true;

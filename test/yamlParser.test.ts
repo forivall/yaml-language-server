@@ -49,8 +49,8 @@ describe('YAML parser', () => {
         `A single document should be available but there are ${parsedDocument.documents.length}`
       );
       assert(
-        parsedDocument.documents[0].root.children.length === 0,
-        `There should no children available but there are ${parsedDocument.documents[0].root.children.length}`
+        parsedDocument.documents[0].root.children!.length === 0,
+        `There should no children available but there are ${parsedDocument.documents[0].root.children!.length}`
       );
       assert(parsedDocument.documents[0].lineComments.length === 1);
       assert(parsedDocument.documents[0].lineComments[0] === '# a comment');
@@ -63,12 +63,12 @@ describe('YAML parser', () => {
         `2 documents should be available but there are ${parsedDocument.documents.length}`
       );
       assert(
-        parsedDocument.documents[0].root.children.length === 0,
-        `There should no children available but there are ${parsedDocument.documents[0].root.children.length}`
+        parsedDocument.documents[0].root.children!.length === 0,
+        `There should no children available but there are ${parsedDocument.documents[0].root.children!.length}`
       );
       assert(
-        parsedDocument.documents[1].root.children.length === 0,
-        `There should no children available but there are ${parsedDocument.documents[1].root.children.length}`
+        parsedDocument.documents[1].root.children!.length === 0,
+        `There should no children available but there are ${parsedDocument.documents[1].root.children!.length}`
       );
       assert(parsedDocument.documents[1].root.value === 'test2');
       assert(parsedDocument.documents[0].lineComments.length === 1);
@@ -82,8 +82,8 @@ describe('YAML parser', () => {
         `A single document should be available but there are ${parsedDocument.documents.length}`
       );
       assert(
-        parsedDocument.documents[0].root.children.length === 0,
-        `There should no children available but there are ${parsedDocument.documents[0].root.children.length}`
+        parsedDocument.documents[0].root.children!.length === 0,
+        `There should no children available but there are ${parsedDocument.documents[0].root.children!.length}`
       );
     });
 
@@ -94,8 +94,8 @@ describe('YAML parser', () => {
         `A single document should be available but there are ${parsedDocument.documents.length}`
       );
       assert(
-        parsedDocument.documents[0].root.children.length === 0,
-        `There should no children available but there are ${parsedDocument.documents[0].root.children.length}`
+        parsedDocument.documents[0].root.children!.length === 0,
+        `There should no children available but there are ${parsedDocument.documents[0].root.children!.length}`
       );
     });
 
@@ -106,13 +106,13 @@ describe('YAML parser', () => {
         `2 documents should be available but there are ${parsedDocument.documents.length}`
       );
       assert(
-        parsedDocument.documents[0].root.children.length === 0,
-        `There should no children available but there are ${parsedDocument.documents[0].root.children.length}`
+        parsedDocument.documents[0].root.children!.length === 0,
+        `There should no children available but there are ${parsedDocument.documents[0].root.children!.length}`
       );
       assert(parsedDocument.documents[0].root.value === 'test');
       assert(
-        parsedDocument.documents[1].root.children.length === 0,
-        `There should no children available but there are ${parsedDocument.documents[1].root.children.length}`
+        parsedDocument.documents[1].root.children!.length === 0,
+        `There should no children available but there are ${parsedDocument.documents[1].root.children!.length}`
       );
       assert(parsedDocument.documents[1].root.value === 'test2');
     });
@@ -124,18 +124,18 @@ describe('YAML parser', () => {
         `3 documents should be available but there are ${parsedDocument.documents.length}`
       );
       assert(
-        parsedDocument.documents[0].root.children.length === 0,
-        `There should no children available but there are ${parsedDocument.documents[0].root.children.length}`
+        parsedDocument.documents[0].root.children!.length === 0,
+        `There should no children available but there are ${parsedDocument.documents[0].root.children!.length}`
       );
       assert(parsedDocument.documents[0].root.value === 'test');
       assert(
-        parsedDocument.documents[1].root.children.length === 0,
-        `There should no children available but there are ${parsedDocument.documents[1].root.children.length}`
+        parsedDocument.documents[1].root.children!.length === 0,
+        `There should no children available but there are ${parsedDocument.documents[1].root.children!.length}`
       );
       assert(parsedDocument.documents[1].root.value === 'test2');
       assert(
-        parsedDocument.documents[2].root.children.length === 0,
-        `There should no children available but there are ${parsedDocument.documents[2].root.children.length}`
+        parsedDocument.documents[2].root.children!.length === 0,
+        `There should no children available but there are ${parsedDocument.documents[2].root.children!.length}`
       );
       assert(parsedDocument.documents[2].root.value === 'test3');
     });
@@ -147,8 +147,8 @@ describe('YAML parser', () => {
         `A single document should be available but there are ${parsedDocument.documents.length}`
       );
       assert(
-        parsedDocument.documents[0].root.children.length === 0,
-        `There should no children available but there are ${parsedDocument.documents[0].root.children.length}`
+        parsedDocument.documents[0].root.children!.length === 0,
+        `There should no children available but there are ${parsedDocument.documents[0].root.children!.length}`
       );
       assert(parsedDocument.documents[0].lineComments.length === 1);
       assert(parsedDocument.documents[0].lineComments[0] === '# a comment');
@@ -161,15 +161,15 @@ describe('YAML parser', () => {
         `2 documents should be available but there are ${parsedDocument.documents.length}`
       );
       assert(
-        parsedDocument.documents[0].root.children.length === 1,
-        `There should one children available but there are ${parsedDocument.documents[0].root.children.length}`
+        parsedDocument.documents[0].root.children!.length === 1,
+        `There should one children available but there are ${parsedDocument.documents[0].root.children!.length}`
       );
       assert(parsedDocument.documents[0].lineComments.length === 1);
       assert(parsedDocument.documents[0].lineComments[0] === '# a comment');
 
       assert(
-        parsedDocument.documents[1].root.children.length === 0,
-        `There should no children available but there are ${parsedDocument.documents[0].root.children.length}`
+        parsedDocument.documents[1].root.children!.length === 0,
+        `There should no children available but there are ${parsedDocument.documents[0].root.children!.length}`
       );
       assert(parsedDocument.documents[1].lineComments.length === 1);
       assert(parsedDocument.documents[1].lineComments[0] === '# a second comment');
@@ -182,15 +182,15 @@ describe('YAML parser', () => {
         `2 documents should be available but there are ${parsedDocument.documents.length}`
       );
       assert(
-        parsedDocument.documents[0].root.children.length === 0,
-        `There should no children available but there are ${parsedDocument.documents[0].root.children.length}`
+        parsedDocument.documents[0].root.children!.length === 0,
+        `There should no children available but there are ${parsedDocument.documents[0].root.children!.length}`
       );
       assert(parsedDocument.documents[0].lineComments.length === 1);
       assert(parsedDocument.documents[0].lineComments[0] === '# a comment');
 
       assert(
-        parsedDocument.documents[1].root.children.length === 0,
-        `There should no children available but there are ${parsedDocument.documents[0].root.children.length}`
+        parsedDocument.documents[1].root.children!.length === 0,
+        `There should no children available but there are ${parsedDocument.documents[0].root.children!.length}`
       );
       assert(parsedDocument.documents[1].lineComments.length === 1);
       assert(parsedDocument.documents[1].lineComments[0] === '# a second comment');

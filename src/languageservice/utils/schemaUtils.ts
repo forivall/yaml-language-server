@@ -10,12 +10,13 @@ export function getSchemaTypeName(schema: JSONSchema): string {
     const type = getSchemaRefTypeTitle(schema.$id);
     return type;
   }
-  if (schema.$ref || schema._$ref) {
-    const type = getSchemaRefTypeTitle(schema.$ref || schema._$ref);
+  const schemaRef = schema.$ref || schema._$ref;
+  if (schemaRef) {
+    const type = getSchemaRefTypeTitle(schemaRef);
     return type;
   }
   const typeStr = schema.closestTitle || (Array.isArray(schema.type) ? schema.type.join(' | ') : schema.type); //object
-  return typeStr;
+  return typeStr || '';
 }
 
 /**
@@ -47,8 +48,9 @@ export function getSchemaTitle(schema: JSONSchema, url: string): string {
   if (!path.extname(uri.fsPath)) {
     baseName += '.json';
   }
-  if (Object.getOwnPropertyDescriptor(schema, 'name')) {
-    return Object.getOwnPropertyDescriptor(schema, 'name').value + ` (${baseName})`;
+  const descriptor = Object.getOwnPropertyDescriptor(schema, 'name');
+  if (descriptor) {
+    return descriptor.value + ` (${baseName})`;
   } else if (schema.title) {
     return schema.title + ` (${baseName})`;
   }

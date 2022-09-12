@@ -1,3 +1,4 @@
+/** @type {import('eslint').Linter.Config} */
 module.exports = {
   root: true,
   parser: '@typescript-eslint/parser',
@@ -27,4 +28,12 @@ module.exports = {
     'no-multi-spaces': ['error', { ignoreEOLComments: true }],
     'keyword-spacing': ['error'],
   },
+  overrides: [
+    {
+      files: '*.test.ts',
+      rules: {
+        '@typescript-eslint/no-non-null-assertion': 'off',
+      },
+    },
+  ],
 };

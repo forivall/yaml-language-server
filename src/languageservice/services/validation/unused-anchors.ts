@@ -13,7 +13,7 @@ import { isCollectionItem } from '../../../languageservice/utils/astUtils';
 
 export class UnusedAnchorsValidator implements AdditionalValidator {
   validate(document: TextDocument, yamlDoc: SingleYAMLDocument): Diagnostic[] {
-    const result = [];
+    const result: Diagnostic[] = [];
     const anchors = new Set<Scalar | YAMLMap | YAMLSeq>();
     const usedAnchors = new Set<Node>();
     const anchorParent = new Map<Scalar | YAMLMap | YAMLSeq, Node | Pair>();
@@ -27,13 +27,17 @@ export class UnusedAnchorsValidator implements AdditionalValidator {
         anchorParent.set(node, path[path.length - 1] as Node);
       }
       if (isAlias(node)) {
-        usedAnchors.add(node.resolve(yamlDoc.internalDocument));
+        const resolved = node.resolve(yamlDoc.internalDocument);
+        if (resolved) {
+          usedAnchors.add(resolved);
+        }
       }
     });
 
     for (const anchor of anchors) {
       if (!usedAnchors.has(anchor)) {
-        const aToken = this.getAnchorNode(anchorParent.get(anchor));
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const aToken = this.getAnchorNode(anchorParent.get(anchor)!);
         if (aToken) {
           const range = Range.create(
             document.positionAt(aToken.offset),

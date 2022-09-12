@@ -29,13 +29,16 @@ import { FlowStyleRewriter } from '../utils/flow-style-rewriter';
 interface YamlDiagnosticData {
   schemaUri: string[];
 }
+
+const DEFAULT_INDENTATION = '  ';
+
 export class YamlCodeActions {
-  private indentation = '  ';
+  private indentation = DEFAULT_INDENTATION;
 
   constructor(private readonly clientCapabilities: ClientCapabilities) {}
 
   configure(settings: LanguageSettings): void {
-    this.indentation = settings.indentation;
+    this.indentation = settings.indentation ?? DEFAULT_INDENTATION;
   }
 
   getCodeAction(document: TextDocument, params: CodeActionParams): CodeAction[] | undefined {
@@ -43,7 +46,7 @@ export class YamlCodeActions {
       return;
     }
 
-    const result = [];
+    const result: CodeAction[] = [];
 
     result.push(...this.getConvertToBooleanActions(params.context.diagnostics, document));
     result.push(...this.getJumpToSchemaActions(params.context.diagnostics));
@@ -64,14 +67,15 @@ export class YamlCodeActions {
       const schemaUri = (diagnostic.data as YamlDiagnosticData)?.schemaUri || [];
       for (const schemaUriStr of schemaUri) {
         if (schemaUriStr) {
-          if (!schemaUriToDiagnostic.has(schemaUriStr)) {
-            schemaUriToDiagnostic.set(schemaUriStr, []);
+          let diagnostics = schemaUriToDiagnostic.get(schemaUriStr);
+          if (!diagnostics) {
+            schemaUriToDiagnostic.set(schemaUriStr, (diagnostics = []));
           }
-          schemaUriToDiagnostic.get(schemaUriStr).push(diagnostic);
+          diagnostics.push(diagnostic);
         }
       }
     }
-    const result = [];
+    const result: CodeAction[] = [];
     for (const schemaUri of schemaUriToDiagnostic.keys()) {
       const action = CodeAction.create(
         `Jump to schema location (${path.basename(schemaUri)})`,
@@ -172,7 +176,7 @@ export class YamlCodeActions {
   }
 
   private getUnusedAnchorsDelete(diagnostics: Diagnostic[], document: TextDocument): CodeAction[] {
-    const result = [];
+    const result: CodeAction[] = [];
     const buffer = new TextBuffer(document);
     for (const diag of diagnostics) {
       if (diag.message.startsWith('Unused anchor') && diag.source === YAML_SOURCE) {
@@ -214,23 +218,35 @@ export class YamlCodeActions {
   }
 
   private getConvertToBlockStyleActions(diagnostics: Diagnostic[], document: TextDocument): CodeAction[] {
+    const yamlDocuments = yamlDocumentsCache.getYamlDocument(document);
+    if (!yamlDocuments) {
+      return [];
+    }
     const results: CodeAction[] = [];
     for (const diagnostic of diagnostics) {
       if (diagnostic.code === 'flowMap' || diagnostic.code === 'flowSeq') {
-        const yamlDocuments = yamlDocumentsCache.getYamlDocument(document);
         const startOffset = document.offsetAt(diagnostic.range.start);
         const yamlDoc = matchOffsetToDocument(startOffset, yamlDocuments);
+        if (!yamlDoc) {
+          continue;
+        }
         const node = yamlDoc.getNodeFromOffset(startOffset);
+        if (!node) {
+          continue;
+        }
         if (isMap(node.internalNode) || isSeq(node.internalNode)) {
           const blockTypeDescription = isMap(node.internalNode) ? 'map' : 'sequence';
           const rewriter = new FlowStyleRewriter(this.indentation);
-          results.push(
-            CodeAction.create(
-              `Convert to block style ${blockTypeDescription}`,
-              createWorkspaceEdit(document.uri, [TextEdit.replace(diagnostic.range, rewriter.write(node))]),
-              CodeActionKind.QuickFix
-            )
-          );
+          const replacement = rewriter.write(node);
+          if (replacement) {
+            results.push(
+              CodeAction.create(
+                `Convert to block style ${blockTypeDescription}`,
+                createWorkspaceEdit(document.uri, [TextEdit.replace(diagnostic.range, replacement)]),
+                CodeActionKind.QuickFix
+              )
+            );
+          }
         }
       }
     }

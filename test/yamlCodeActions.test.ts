@@ -45,12 +45,12 @@ describe('CodeActions Tests', () => {
     it('should not provide any actions if there are no diagnostics', () => {
       const doc = setupTextDocument('');
       const params: CodeActionParams = {
-        context: CodeActionContext.create(undefined),
-        range: undefined,
+        context: CodeActionContext.create(undefined as any),
+        range: undefined as any,
         textDocument: TextDocumentIdentifier.create(TEST_URI),
       };
       const actions = new YamlCodeActions(clientCapabilities);
-      const result = actions.getCodeAction(doc, params);
+      const result = actions.getCodeAction(doc, params)!;
       expect(result).to.be.undefined;
     });
 
@@ -59,12 +59,12 @@ describe('CodeActions Tests', () => {
       const diagnostics = [createDiagnosticWithData('foo', 0, 0, 0, 0, 1, JSON_SCHEMA_LOCAL, JSON_SCHEMA_LOCAL)];
       const params: CodeActionParams = {
         context: CodeActionContext.create(diagnostics),
-        range: undefined,
+        range: undefined as any,
         textDocument: TextDocumentIdentifier.create(TEST_URI),
       };
       clientCapabilities.window = { showDocument: { support: true } };
       const actions = new YamlCodeActions(clientCapabilities);
-      const result = actions.getCodeAction(doc, params);
+      const result = actions.getCodeAction(doc, params)!;
 
       const codeAction = CodeAction.create(
         'Jump to schema location (schema.json)',
@@ -81,12 +81,12 @@ describe('CodeActions Tests', () => {
       ];
       const params: CodeActionParams = {
         context: CodeActionContext.create(diagnostics),
-        range: undefined,
+        range: undefined as any,
         textDocument: TextDocumentIdentifier.create(TEST_URI),
       };
       clientCapabilities.window = { showDocument: { support: true } };
       const actions = new YamlCodeActions(clientCapabilities);
-      const result = actions.getCodeAction(doc, params);
+      const result = actions.getCodeAction(doc, params)!;
 
       const codeAction = CodeAction.create(
         'Jump to schema location (schema.json)',
@@ -109,15 +109,15 @@ describe('CodeActions Tests', () => {
       const diagnostics = [createExpectedError('Using tabs can lead to unpredictable results', 1, 0, 1, 1, 1, JSON_SCHEMA_LOCAL)];
       const params: CodeActionParams = {
         context: CodeActionContext.create(diagnostics),
-        range: undefined,
+        range: undefined as any,
         textDocument: TextDocumentIdentifier.create(TEST_URI),
       };
       const actions = new YamlCodeActions(clientCapabilities);
-      const result = actions.getCodeAction(doc, params);
+      const result = actions.getCodeAction(doc, params)!;
       expect(result).to.has.length(2);
       expect(result[0].title).to.be.equal('Convert Tab to Spaces');
-      expect(WorkspaceEdit.is(result[0].edit)).to.be.true;
-      expect(result[0].edit.changes[TEST_URI]).deep.equal([TextEdit.replace(Range.create(1, 0, 1, 1), '  ')]);
+      expect(WorkspaceEdit.is(result[0].edit!)).to.be.true;
+      expect(result[0].edit!.changes![TEST_URI]).deep.equal([TextEdit.replace(Range.create(1, 0, 1, 1), '  ')]);
     });
 
     it('should support current indentation chars settings', () => {
@@ -125,15 +125,15 @@ describe('CodeActions Tests', () => {
       const diagnostics = [createExpectedError('Using tabs can lead to unpredictable results', 1, 0, 1, 1, 1, JSON_SCHEMA_LOCAL)];
       const params: CodeActionParams = {
         context: CodeActionContext.create(diagnostics),
-        range: undefined,
+        range: undefined as any,
         textDocument: TextDocumentIdentifier.create(TEST_URI),
       };
       const actions = new YamlCodeActions(clientCapabilities);
       actions.configure({ indentation: '   ' } as LanguageSettings);
-      const result = actions.getCodeAction(doc, params);
+      const result = actions.getCodeAction(doc, params)!;
 
       expect(result[0].title).to.be.equal('Convert Tab to Spaces');
-      expect(result[0].edit.changes[TEST_URI]).deep.equal([TextEdit.replace(Range.create(1, 0, 1, 1), '   ')]);
+      expect(result[0].edit!.changes![TEST_URI]).deep.equal([TextEdit.replace(Range.create(1, 0, 1, 1), '   ')]);
     });
 
     it('should provide "Convert all Tabs to Spaces"', () => {
@@ -141,14 +141,14 @@ describe('CodeActions Tests', () => {
       const diagnostics = [createExpectedError('Using tabs can lead to unpredictable results', 1, 0, 1, 3, 1, JSON_SCHEMA_LOCAL)];
       const params: CodeActionParams = {
         context: CodeActionContext.create(diagnostics),
-        range: undefined,
+        range: undefined as any,
         textDocument: TextDocumentIdentifier.create(TEST_URI),
       };
       const actions = new YamlCodeActions(clientCapabilities);
-      const result = actions.getCodeAction(doc, params);
+      const result = actions.getCodeAction(doc, params)!;
 
       expect(result[1].title).to.be.equal('Convert all Tabs to Spaces');
-      expect(result[1].edit.changes[TEST_URI]).deep.equal([
+      expect(result[1].edit!.changes![TEST_URI]).deep.equal([
         TextEdit.replace(Range.create(1, 0, 1, 3), '      '),
         TextEdit.replace(Range.create(2, 0, 2, 2), '    '),
       ]);
@@ -161,13 +161,13 @@ describe('CodeActions Tests', () => {
       const diagnostics = [createUnusedAnchorDiagnostic('Unused anchor "&bar"', 0, 5, 0, 9)];
       const params: CodeActionParams = {
         context: CodeActionContext.create(diagnostics),
-        range: undefined,
+        range: undefined as any,
         textDocument: TextDocumentIdentifier.create(TEST_URI),
       };
       const actions = new YamlCodeActions(clientCapabilities);
-      const result = actions.getCodeAction(doc, params);
+      const result = actions.getCodeAction(doc, params)!;
       expect(result[0].title).to.be.equal('Delete unused anchor: &bar');
-      expect(result[0].edit.changes[TEST_URI]).deep.equal([TextEdit.del(Range.create(0, 5, 0, 10))]);
+      expect(result[0].edit!.changes![TEST_URI]).deep.equal([TextEdit.del(Range.create(0, 5, 0, 10))]);
     });
 
     it('should delete all whitespace after unused anchor', () => {
@@ -175,13 +175,13 @@ describe('CodeActions Tests', () => {
       const diagnostics = [createUnusedAnchorDiagnostic('Unused anchor "&bar"', 0, 5, 0, 9)];
       const params: CodeActionParams = {
         context: CodeActionContext.create(diagnostics),
-        range: undefined,
+        range: undefined as any,
         textDocument: TextDocumentIdentifier.create(TEST_URI),
       };
       const actions = new YamlCodeActions(clientCapabilities);
-      const result = actions.getCodeAction(doc, params);
+      const result = actions.getCodeAction(doc, params)!;
       expect(result[0].title).to.be.equal('Delete unused anchor: &bar');
-      expect(result[0].edit.changes[TEST_URI]).deep.equal([TextEdit.del(Range.create(0, 5, 0, 13))]);
+      expect(result[0].edit!.changes![TEST_URI]).deep.equal([TextEdit.del(Range.create(0, 5, 0, 13))]);
     });
   });
 
@@ -197,17 +197,17 @@ animals: [dog , cat , mouse]  `;
       ];
       const params: CodeActionParams = {
         context: CodeActionContext.create(diagnostics),
-        range: undefined,
+        range: (undefined as any) as any,
         textDocument: TextDocumentIdentifier.create(TEST_URI),
       };
       const actions = new YamlCodeActions(clientCapabilities);
-      const result = actions.getCodeAction(doc, params);
+      const result = actions.getCodeAction(doc, params)!;
       expect(result).to.be.not.empty;
       expect(result).to.have.lengthOf(2);
-      expect(result[0].edit.changes[TEST_URI]).deep.equal([
+      expect(result[0].edit!.changes![TEST_URI]).deep.equal([
         TextEdit.replace(Range.create(1, 12, 1, 39), `\n  location: canada \n  cab: 15`),
       ]);
-      expect(result[1].edit.changes[TEST_URI]).deep.equal([
+      expect(result[1].edit!.changes![TEST_URI]).deep.equal([
         TextEdit.replace(Range.create(2, 9, 2, 27), `\n  - dog \n  - cat \n  - mouse`),
       ]);
     });

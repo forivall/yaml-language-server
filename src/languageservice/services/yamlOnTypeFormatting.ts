@@ -25,7 +25,7 @@ export function doDocumentOnTypeFormatting(
         if (indentationFix === params.options.tabSize && !isInArray) {
           return; // skip if line already has proper formatting
         }
-        const result = [];
+        const result: TextEdit[] = [];
         if (currentLine.length > 0) {
           result.push(TextEdit.del(Range.create(position, Position.create(position.line, currentLine.length - 1))));
         }

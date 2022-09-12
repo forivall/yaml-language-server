@@ -164,7 +164,7 @@ export interface LanguageService {
   findLinks(document: TextDocument): Promise<DocumentLink[]>;
   resetSchema(uri: string): boolean;
   doFormat(document: TextDocument, options: CustomFormatterOptions): TextEdit[];
-  doDefinition(document: TextDocument, params: DefinitionParams): DefinitionLink[] | undefined;
+  doDefinition(document: TextDocument, params: DefinitionParams): Promise<DefinitionLink[] | undefined>;
   doDocumentOnTypeFormatting(document: TextDocument, params: DocumentOnTypeFormattingParams): TextEdit[] | undefined;
   addSchema(schemaID: string, schema: JSONSchema): void;
   deleteSchema(schemaID: string): void;
@@ -183,7 +183,7 @@ export function getLanguageService(
   connection: Connection,
   telemetry: Telemetry,
   yamlSettings: SettingsState,
-  clientCapabilities?: ClientCapabilities
+  clientCapabilities: ClientCapabilities = {}
 ): LanguageService {
   const schemaService = new YAMLSchemaService(schemaRequestService, workspaceContext);
   const completer = new YamlCompletion(schemaService, clientCapabilities, yamlDocumentsCache, telemetry);
@@ -211,7 +211,7 @@ export function getLanguageService(
           schemaService.registerExternalSchema(
             settings.uri,
             settings.fileMatch,
-            settings.schema,
+            settings.schema as JSONSchema,
             settings.name,
             settings.description,
             settings.versions

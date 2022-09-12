@@ -84,7 +84,7 @@ export class LanguageHandlers {
    * Called when the code outline in an editor needs to be populated
    * Returns a list of symbols that is then shown in the code outline
    */
-  documentSymbolHandler(documentSymbolParams: DocumentSymbolParams): DocumentSymbol[] | SymbolInformation[] {
+  documentSymbolHandler(documentSymbolParams: DocumentSymbolParams): DocumentSymbol[] | SymbolInformation[] | undefined {
     const document = this.yamlSettings.documents.get(documentSymbolParams.textDocument.uri);
 
     if (!document) {
@@ -110,7 +110,7 @@ export class LanguageHandlers {
    * Called when the formatter is invoked
    * Returns the formatted document content using prettier
    */
-  formatterHandler(formatParams: DocumentFormattingParams): TextEdit[] {
+  formatterHandler(formatParams: DocumentFormattingParams): TextEdit[] | undefined {
     const document = this.yamlSettings.documents.get(formatParams.textDocument.uri);
 
     if (!document) {
@@ -138,11 +138,11 @@ export class LanguageHandlers {
    * Called when the user hovers with their mouse over a keyword
    * Returns an informational tooltip
    */
-  hoverHandler(textDocumentPositionParams: TextDocumentPositionParams): Promise<Hover> {
+  hoverHandler(textDocumentPositionParams: TextDocumentPositionParams): Promise<Hover | null> {
     const document = this.yamlSettings.documents.get(textDocumentPositionParams.textDocument.uri);
 
     if (!document) {
-      return Promise.resolve(undefined);
+      return Promise.resolve(null);
     }
 
     return this.languageService.doHover(document, textDocumentPositionParams.position);
@@ -188,13 +188,13 @@ export class LanguageHandlers {
     }
   }
 
-  foldingRangeHandler(params: FoldingRangeParams): Promise<FoldingRange[] | undefined> | FoldingRange[] | undefined {
+  foldingRangeHandler(params: FoldingRangeParams): Promise<FoldingRange[] | undefined> | FoldingRange[] | null {
     const textDocument = this.yamlSettings.documents.get(params.textDocument.uri);
     if (!textDocument) {
-      return;
+      return null;
     }
 
-    const capabilities = this.yamlSettings.capabilities.textDocument.foldingRange;
+    const capabilities = this.yamlSettings.capabilities.textDocument?.foldingRange ?? {};
     const rangeLimit = this.yamlSettings.maxItemsComputed || capabilities.rangeLimit;
     const onRangeLimitExceeded = this.onResultLimitExceeded(textDocument.uri, rangeLimit, 'folding ranges');
 
@@ -228,7 +228,7 @@ export class LanguageHandlers {
     return this.languageService.resolveCodeLens(param);
   }
 
-  definitionHandler(params: DefinitionParams): DefinitionLink[] {
+  async definitionHandler(params: DefinitionParams): Promise<DefinitionLink[] | undefined> {
     const textDocument = this.yamlSettings.documents.get(params.textDocument.uri);
     if (!textDocument) {
       return;
@@ -247,7 +247,7 @@ export class LanguageHandlers {
     }
   }
 
-  private onResultLimitExceeded(uri: string, resultLimit: number, name: string) {
+  private onResultLimitExceeded(uri: string, resultLimit: number | undefined, name: string) {
     return () => {
       let warning = this.pendingLimitExceededWarnings[uri];
       if (warning) {

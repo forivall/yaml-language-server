@@ -15,8 +15,8 @@ export { YAMLDocument, SingleYAMLDocument };
 
 export type YamlVersion = '1.1' | '1.2';
 export interface ParserOptions {
-  customTags: string[];
-  yamlVersion: YamlVersion;
+  customTags: string[] | undefined;
+  yamlVersion: YamlVersion | undefined;
 }
 export const defaultOptions: ParserOptions = {
   customTags: [],

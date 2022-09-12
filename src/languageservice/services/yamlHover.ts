@@ -8,7 +8,7 @@
 import { Hover, MarkupContent, Position, Range } from 'vscode-languageserver-types';
 import { matchOffsetToDocument } from '../utils/arrUtils';
 import { LanguageSettings } from '../yamlLanguageService';
-import { YAMLSchemaService } from './yamlSchemaService';
+import { ResolvedSchema, YAMLSchemaService } from './yamlSchemaService';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
@@ -21,7 +21,7 @@ import { Telemetry } from '../../languageserver/telemetry';
 import { convertErrorToTelemetryMsg } from '../utils/objects';
 
 export class YAMLHover {
-  private shouldHover: boolean;
+  private shouldHover?: boolean;
   private schemaService: YAMLSchemaService;
 
   constructor(schemaService: YAMLSchemaService, private readonly telemetry: Telemetry) {
@@ -35,16 +35,19 @@ export class YAMLHover {
     }
   }
 
-  doHover(document: TextDocument, position: Position, isKubernetes = false): Promise<Hover | null> {
+  doHover(document: TextDocument, position: Position, isKubernetes = false): Promise<Hover | null> | undefined {
     try {
       if (!this.shouldHover || !document) {
-        return Promise.resolve(undefined);
+        return Promise.resolve(null);
       }
       const doc = yamlDocumentsCache.getYamlDocument(document);
+      if (!doc) {
+        throw new Error('Document unavailable');
+      }
       const offset = document.offsetAt(position);
       const currentDoc = matchOffsetToDocument(offset, doc);
       if (currentDoc === null) {
-        return Promise.resolve(undefined);
+        return Promise.resolve(null);
       }
 
       setKubernetesParserOption(doc.documents, isKubernetes);
@@ -96,7 +99,7 @@ export class YAMLHover {
       return result;
     };
 
-    return this.schemaService.getSchemaForResource(document.uri, doc).then((schema) => {
+    return this.schemaService.getSchemaForResource(document.uri, doc).then((schema: ResolvedSchema | null) => {
       if (schema && node && !schema.errors.length) {
         const matchingSchemas = doc.getMatchingSchemas(schema.schema, node.offset);
 
@@ -106,7 +109,7 @@ export class YAMLHover {
         let enumValue: string | undefined = undefined;
         const markdownExamples: string[] = [];
 
-        matchingSchemas.every((s) => {
+        for (const s of matchingSchemas) {
           if ((s.node === node || (node.type === 'property' && node.valueNode === s.node)) && !s.inverted && s.schema) {
             title = title || s.schema.title || s.schema.closestTitle;
             markdownDescription = markdownDescription || s.schema.markdownDescription || toMarkdown(s.schema.description);
@@ -130,8 +133,7 @@ export class YAMLHover {
               });
             }
           }
-          return true;
-        });
+        }
         let result = '';
         if (title) {
           result = '#### ' + toMarkdown(title);
@@ -146,7 +148,7 @@ export class YAMLHover {
           if (result.length > 0) {
             result += '\n\n';
           }
-          result += `\`${toMarkdownCodeBlock(enumValue)}\`: ${markdownEnumValueDescription}`;
+          result += `\`${toMarkdownCodeBlock(`${enumValue}`)}\`: ${markdownEnumValueDescription}`;
         }
         if (markdownExamples.length !== 0) {
           if (result.length > 0) {

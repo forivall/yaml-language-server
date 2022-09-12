@@ -4,10 +4,11 @@
  *--------------------------------------------------------------------------------------------*/
 import { configure as configureHttpRequests, xhr } from 'request-light';
 import { Connection, DidChangeConfigurationNotification, DocumentFormattingRequest } from 'vscode-languageserver';
+import { JSONSchema } from '../../languageservice/jsonSchema';
 import { convertErrorToTelemetryMsg } from '../../languageservice/utils/objects';
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
 import { checkSchemaURI, JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from '../../languageservice/utils/schemaUrls';
-import { LanguageService, LanguageSettings, SchemaPriority } from '../../languageservice/yamlLanguageService';
+import { LanguageService, LanguageSettings, SchemaPriority, SchemasSettings } from '../../languageservice/yamlLanguageService';
 import { SchemaSelectionRequests } from '../../requestTypes';
 import { Settings, SettingsState } from '../../yamlSettings';
 import { Telemetry } from '../telemetry';
@@ -201,10 +202,10 @@ export class SettingsHandler {
    * When the schema store is enabled, download and store YAML schema associations
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private async getSchemaStoreMatchingSchemas(schemaStoreUrl: string): Promise<{ schemas: any[] }> {
+  private async getSchemaStoreMatchingSchemas(schemaStoreUrl: string): Promise<{ schemas: SchemasSettings[] }> {
     const response = await xhr({ url: schemaStoreUrl });
 
-    const languageSettings = {
+    const languageSettings: { schemas: SchemasSettings[] } = {
       schemas: [],
     };
 
@@ -264,7 +265,7 @@ export class SettingsHandler {
         this.yamlSettings.schemaAssociations.forEach((association) => {
           languageSettings = this.configureSchemas(
             association.uri,
-            association.fileMatch,
+            association.fileMatch ?? [],
             association.schema,
             languageSettings,
             SchemaPriority.SchemaAssociation
@@ -280,9 +281,9 @@ export class SettingsHandler {
 
     if (this.yamlSettings.schemaConfigurationSettings) {
       this.yamlSettings.schemaConfigurationSettings.forEach((schema) => {
-        let uri = schema.uri;
+        let uri: string | undefined = schema.uri;
         if (!uri && schema.schema) {
-          uri = schema.schema.id;
+          uri = (schema.schema as JSONSchema).id;
         }
         if (!uri && schema.fileMatch) {
           uri = 'vscode://schemas/custom/' + encodeURIComponent(schema.fileMatch.join('&'));
@@ -304,7 +305,7 @@ export class SettingsHandler {
     }
 
     if (this.yamlSettings.schemaStoreSettings) {
-      languageSettings.schemas = languageSettings.schemas.concat(this.yamlSettings.schemaStoreSettings);
+      languageSettings.schemas = (languageSettings.schemas ?? []).concat(this.yamlSettings.schemaStoreSettings);
     }
 
     this.languageService.configure(languageSettings);
@@ -330,6 +331,9 @@ export class SettingsHandler {
   ): LanguageSettings {
     uri = checkSchemaURI(this.yamlSettings.workspaceFolders, this.yamlSettings.workspaceRoot, uri, this.telemetry);
 
+    if (!languageSettings.schemas) {
+      languageSettings.schemas = [];
+    }
     if (schema === null) {
       languageSettings.schemas.push({ uri, fileMatch: fileMatch, priority: priorityLevel });
     } else {
@@ -341,7 +345,7 @@ export class SettingsHandler {
         this.yamlSettings.specificValidatorPaths.push(url);
       });
     } else if (uri === KUBERNETES_SCHEMA_URL) {
-      this.yamlSettings.specificValidatorPaths.push(fileMatch);
+      this.yamlSettings.specificValidatorPaths.push(...fileMatch);
     }
 
     return languageSettings;

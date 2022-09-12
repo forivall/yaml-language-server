@@ -82,8 +82,9 @@ export class YAMLServerInit {
       this.yamlSettings.capabilities.textDocument.rangeFormatting &&
       this.yamlSettings.capabilities.textDocument.rangeFormatting.dynamicRegistration
     );
-    this.yamlSettings.hasWorkspaceFolderCapability =
-      this.yamlSettings.capabilities.workspace && !!this.yamlSettings.capabilities.workspace.workspaceFolders;
+    this.yamlSettings.hasWorkspaceFolderCapability = !!(
+      this.yamlSettings.capabilities.workspace && this.yamlSettings.capabilities.workspace.workspaceFolders
+    );
 
     this.yamlSettings.hasConfigurationCapability = !!(
       this.yamlSettings.capabilities.workspace && !!this.yamlSettings.capabilities.workspace.configuration

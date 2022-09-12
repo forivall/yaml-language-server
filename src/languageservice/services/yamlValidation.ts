@@ -7,7 +7,7 @@
 
 import { Diagnostic, Position } from 'vscode-languageserver-types';
 import { LanguageSettings } from '../yamlLanguageService';
-import { YAMLDocument, YamlVersion, SingleYAMLDocument } from '../parser/yamlParser07';
+import { YamlVersion, SingleYAMLDocument } from '../parser/yamlParser07';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { YAMLDocDiagnostic } from '../utils/parseUtils';
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -20,6 +20,10 @@ import { Telemetry } from '../../languageserver/telemetry';
 import { AdditionalValidator } from './validation/types';
 import { UnusedAnchorsValidator } from './validation/unused-anchors';
 import { YAMLStyleValidator } from './validation/yaml-style';
+
+function isYamlDiagnostic(err: YAMLDocDiagnostic | Diagnostic): err is YAMLDocDiagnostic {
+  return Object.prototype.hasOwnProperty.call(err, 'location');
+}
 
 /**
  * Convert a YAMLDocDiagnostic to a language server Diagnostic
@@ -39,11 +43,11 @@ export const yamlDiagToLSDiag = (yamlDiag: YAMLDocDiagnostic, textDocument: Text
 };
 
 export class YAMLValidation {
-  private validationEnabled: boolean;
-  private customTags: string[];
+  private validationEnabled?: boolean;
+  private customTags?: string[];
   private jsonValidation;
-  private disableAdditionalProperties: boolean;
-  private yamlVersion: YamlVersion;
+  private disableAdditionalProperties?: boolean;
+  private yamlVersion?: YamlVersion;
   private validators: AdditionalValidator[] = [];
 
   private MATCHES_MULTIPLE = 'Matches multiple schemas when only one must validate.';
@@ -73,13 +77,16 @@ export class YAMLValidation {
       return Promise.resolve([]);
     }
 
-    const validationResult = [];
+    const validationResult: (YAMLDocDiagnostic | Diagnostic)[] = [];
     try {
-      const yamlDocument: YAMLDocument = yamlDocumentsCache.getYamlDocument(
+      const yamlDocument = yamlDocumentsCache.getYamlDocument(
         textDocument,
         { customTags: this.customTags, yamlVersion: this.yamlVersion },
         true
       );
+      if (!yamlDocument) {
+        throw new Error('Document unavailable');
+      }
 
       let index = 0;
       for (const currentYAMLDoc of yamlDocument.documents) {
@@ -106,8 +113,8 @@ export class YAMLValidation {
       this.telemetry.sendError('yaml.validation.error', { error: convertErrorToTelemetryMsg(err) });
     }
 
-    let previousErr: Diagnostic;
-    const foundSignatures = new Set();
+    let previousErr: Diagnostic | undefined;
+    const foundSignatures: Set<string> = new Set();
     const duplicateMessagesRemoved: Diagnostic[] = [];
     for (let err of validationResult) {
       /**
@@ -119,7 +126,7 @@ export class YAMLValidation {
         continue;
       }
 
-      if (Object.prototype.hasOwnProperty.call(err, 'location')) {
+      if (isYamlDiagnostic(err)) {
         err = yamlDiagToLSDiag(err, textDocument);
       }
 
@@ -149,7 +156,7 @@ export class YAMLValidation {
     return duplicateMessagesRemoved;
   }
   private runAdditionalValidators(document: TextDocument, yarnDoc: SingleYAMLDocument): Diagnostic[] {
-    const result = [];
+    const result: Diagnostic[] = [];
 
     for (const validator of this.validators) {
       result.push(...validator.validate(document, yarnDoc));

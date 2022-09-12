@@ -1,5 +1,5 @@
 import { TextDocuments, Disposable, ClientCapabilities, WorkspaceFolder } from 'vscode-languageserver';
-import { CustomFormatterOptions, SchemaConfiguration } from './languageservice/yamlLanguageService';
+import { CustomFormatterOptions, SchemaConfiguration, SchemasSettings } from './languageservice/yamlLanguageService';
 import { ISchemaAssociations } from './requestTypes';
 import { URI } from 'vscode-uri';
 import { JSONSchema } from './languageservice/jsonSchema';
@@ -57,11 +57,11 @@ export interface JSONSchemaSettings {
 
 // This class is responsible for handling all the settings
 export class SettingsState {
-  yamlConfigurationSettings: JSONSchemaSettings[] = undefined;
+  yamlConfigurationSettings?: JSONSchemaSettings[] = undefined;
   schemaAssociations: ISchemaAssociations | SchemaConfiguration[] | undefined = undefined;
-  formatterRegistration: Thenable<Disposable> = null;
-  specificValidatorPaths = [];
-  schemaConfigurationSettings = [];
+  formatterRegistration: Thenable<Disposable> | null = null;
+  specificValidatorPaths: string[] = [];
+  schemaConfigurationSettings: SchemasSettings[] = [];
   yamlShouldValidate = true;
   yamlFormatterSettings = {
     singleQuote: false,
@@ -72,8 +72,8 @@ export class SettingsState {
   } as CustomFormatterOptions;
   yamlShouldHover = true;
   yamlShouldCompletion = true;
-  schemaStoreSettings = [];
-  customTags = [];
+  schemaStoreSettings: SchemasSettings[] = [];
+  customTags: string[] = [];
   schemaStoreEnabled = true;
   schemaStoreUrl = JSON_SCHEMASTORE_URL;
   indentation: string | undefined = undefined;
@@ -98,7 +98,7 @@ export class SettingsState {
 
   // Language client configuration
   capabilities: ClientCapabilities;
-  workspaceRoot: URI = null;
+  workspaceRoot: URI | null = null;
   workspaceFolders: WorkspaceFolder[] = [];
   clientDynamicRegisterSupport = false;
   hierarchicalDocumentSymbolSupport = false;

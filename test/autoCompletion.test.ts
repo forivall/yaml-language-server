@@ -1644,7 +1644,7 @@ describe('Auto Completion Tests', () => {
       const content = 'rules:\n    -|\n|'; // len: 13, pos: 12
       const completion = await parseSetup(content);
 
-      expect(completion.items.find((i) => i.label === 'rules item').textEdit.newText).equal(
+      expect(completion.items.find((i) => i.label === 'rules item')!.textEdit!.newText).equal(
         ' id: $1\n  nomination: $2\n  weight: ${3:0}\n  criteria:\n      - field: $4\n        operator: $5\n        operand: $6'
       );
     });
@@ -2016,7 +2016,7 @@ describe('Auto Completion Tests', () => {
       const content = 'components:\n  - id: jsakdh\n    setti'; // len: 36
       const completion = await parseSetup(content, 36);
       expect(completion.items).lengthOf(1);
-      expect(completion.items[0].textEdit.newText).to.equal(
+      expect(completion.items[0].textEdit!.newText).to.equal(
         'settings:\n  data:\n    arrayItems:\n      - show: ${1:true}\n        id: $2'
       );
     });
@@ -2178,11 +2178,11 @@ describe('Auto Completion Tests', () => {
 
       const enumItem = completion.items.find((i) => i.label === 'enum');
       expect(enumItem).to.not.undefined;
-      expect(enumItem.textEdit.newText).equal('enum: ${1:"1"}');
+      expect(enumItem!.textEdit!.newText).equal('enum: ${1:"1"}');
 
       const envItem = completion.items.find((i) => i.label === 'env');
       expect(envItem).to.not.undefined;
-      expect(envItem.textEdit.newText).equal('env: ${1:1}');
+      expect(envItem!.textEdit!.newText).equal('env: ${1:1}');
     });
 
     it('should complete string which contains number in examples values', async () => {
@@ -2201,15 +2201,15 @@ describe('Auto Completion Tests', () => {
 
       const testItem = completion.items.find((i) => i.label === 'test');
       expect(testItem).to.not.undefined;
-      expect(testItem.textEdit.newText).equal('test');
+      expect(testItem!.textEdit!.newText).equal('test');
 
       const oneItem = completion.items.find((i) => i.label === '1');
       expect(oneItem).to.not.undefined;
-      expect(oneItem.textEdit.newText).equal('"1"');
+      expect(oneItem!.textEdit!.newText).equal('"1"');
 
       const trueItem = completion.items.find((i) => i.label === 'true');
       expect(trueItem).to.not.undefined;
-      expect(trueItem.textEdit.newText).equal('"true"');
+      expect(trueItem!.textEdit!.newText).equal('"true"');
     });
 
     it('should provide label as string for examples completion item', async () => {
@@ -2626,7 +2626,7 @@ describe('Auto Completion Tests', () => {
       expect(completion.items.length).is.equal(4);
       const obj1 = completion.items.find((it) => it.label === 'obj1');
       expect(obj1).is.not.undefined;
-      expect(obj1.textEdit.newText).equal('obj1:\n    ');
+      expect(obj1!.textEdit!.newText).equal('obj1:\n    ');
     });
 
     it('Autocomplete key in nested object while typing', (done) => {

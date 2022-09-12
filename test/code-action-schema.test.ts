@@ -51,18 +51,18 @@ describe('Schema Errors Code Action Tests', () => {
       });
       const content = 'analytics: "false"';
       const doc = parseSetup(content);
-      const diagnostics = await validationHandler.validateTextDocument(doc);
+      const diagnostics = (await validationHandler.validateTextDocument(doc))!;
       const params: CodeActionParams = {
         context: CodeActionContext.create(diagnostics),
-        range: undefined,
+        range: undefined!,
         textDocument: TextDocumentIdentifier.create(TEST_URI),
       };
       const actions = new YamlCodeActions({});
-      const result = actions.getCodeAction(doc, params);
+      const result = actions.getCodeAction(doc, params)!;
       expect(result.length).to.be.equal(1);
       expect(result[0].title).to.be.equal('Convert to boolean');
-      expect(result[0].edit.changes[doc.uri]).to.exist;
-      const edit = result[0].edit.changes[doc.uri];
+      expect(result[0].edit!.changes![doc.uri]).to.exist;
+      const edit = result[0].edit!.changes![doc.uri];
       expect(edit.length).to.be.equal(1);
       expect(edit[0]).deep.equal(TextEdit.replace(Range.create(0, 11, 0, 18), 'false'));
     });
@@ -78,18 +78,18 @@ describe('Schema Errors Code Action Tests', () => {
       });
       const content = "analytics: 'true'";
       const doc = parseSetup(content);
-      const diagnostics = await validationHandler.validateTextDocument(doc);
+      const diagnostics = (await validationHandler.validateTextDocument(doc))!;
       const params: CodeActionParams = {
         context: CodeActionContext.create(diagnostics),
-        range: undefined,
+        range: undefined!,
         textDocument: TextDocumentIdentifier.create(TEST_URI),
       };
       const actions = new YamlCodeActions({});
-      const result = actions.getCodeAction(doc, params);
+      const result = actions.getCodeAction(doc, params)!;
       expect(result.length).to.be.equal(1);
       expect(result[0].title).to.be.equal('Convert to boolean');
-      expect(result[0].edit.changes[doc.uri]).to.exist;
-      const edit = result[0].edit.changes[doc.uri];
+      expect(result[0].edit!.changes![doc.uri]).to.exist;
+      const edit = result[0].edit!.changes![doc.uri];
       expect(edit.length).to.be.equal(1);
       expect(edit[0]).deep.equal(TextEdit.replace(Range.create(0, 11, 0, 17), 'true'));
     });

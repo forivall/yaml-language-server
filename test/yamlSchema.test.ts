@@ -40,7 +40,7 @@ describe('YAML Schema', () => {
     const service = new SchemaService.YAMLSchemaService(requestServiceStub, workspaceContext);
     const result = await service.loadSchema('fooScheme.yaml');
     expect(requestServiceStub.calledOnceWith('fooScheme.yaml'));
-    expect(result.schema.properties['fooBar']).eql({
+    expect(result.schema.properties!['fooBar']).eql({
       items: { type: 'string' },
       type: 'array',
     });

@@ -17,7 +17,7 @@ export class YAMLFormatter {
 
   public configure(shouldFormat: LanguageSettings): void {
     if (shouldFormat) {
-      this.formatterEnabled = shouldFormat.format;
+      this.formatterEnabled = shouldFormat.format ?? true;
     }
   }
 

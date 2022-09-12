@@ -64,7 +64,7 @@ describe('YAML Schema Service', () => {
       expect(requestServiceMock).calledWithExactly('https://json-schema.org/draft-07/schema');
       expect(requestServiceMock).calledWithExactly('https://json-schema.org/draft-07/schema#/definitions/schemaArray');
 
-      expect(schema.schema.type).eqls('array');
+      expect(schema!.schema.type).eqls('array');
     });
 
     it('should handle url with fragments when root object is schema', async () => {
@@ -82,7 +82,7 @@ describe('YAML Schema Service', () => {
   }, "properties": {"foo": {"type": "boolean"}}, "required": ["foo"]}`);
 
       const service = new SchemaService.YAMLSchemaService(requestServiceMock);
-      const schema = await service.getSchemaForResource('', yamlDock.documents[0]);
+      const schema = (await service.getSchemaForResource('', yamlDock.documents[0]))!;
 
       expect(requestServiceMock).calledTwice;
       expect(requestServiceMock).calledWithExactly('https://json-schema.org/draft-07/schema');
@@ -90,7 +90,7 @@ describe('YAML Schema Service', () => {
 
       expect(schema.schema.type).eqls('array');
       expect(schema.schema.required).is.undefined;
-      expect(schema.schema.definitions.bar.type).eqls('string');
+      expect(schema.schema.definitions!.bar.type).eqls('string');
     });
 
     it('should handle file path with fragments', async () => {
@@ -104,7 +104,7 @@ describe('YAML Schema Service', () => {
     }}, "properties": {}}`);
 
       const service = new SchemaService.YAMLSchemaService(requestServiceMock);
-      const schema = await service.getSchemaForResource('', yamlDock.documents[0]);
+      const schema = (await service.getSchemaForResource('', yamlDock.documents[0]))!;
 
       expect(requestServiceMock).calledTwice;
       if (process.platform === 'win32') {

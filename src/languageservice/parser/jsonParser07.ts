@@ -18,7 +18,7 @@ import {
   PropertyASTNode,
   YamlNode,
 } from '../jsonASTTypes';
-import { ErrorCode } from 'vscode-json-languageservice';
+import { ErrorCode, JSONDocument as JSONDocumentBase } from 'vscode-json-languageservice';
 import * as nls from 'vscode-nls';
 import { URI } from 'vscode-uri';
 import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
@@ -87,22 +87,22 @@ export abstract class ASTNodeImpl {
 
   public offset: number;
   public length: number;
-  public readonly parent: ASTNode;
+  public readonly parent: ASTNode | undefined;
   public location: string;
   readonly internalNode: YamlNode;
 
-  constructor(parent: ASTNode, internalNode: YamlNode, offset: number, length?: number) {
+  constructor(parent: ASTNode | undefined, internalNode: YamlNode, offset: number, length = 0) {
     this.offset = offset;
     this.length = length;
     this.parent = parent;
     this.internalNode = internalNode;
   }
 
-  public getNodeFromOffsetEndInclusive(offset: number): ASTNode {
-    const collector = [];
-    const findNode = (node: ASTNode | ASTNodeImpl): ASTNode | ASTNodeImpl => {
-      if (offset >= node.offset && offset <= node.offset + node.length) {
-        const children = node.children;
+  public getNodeFromOffsetEndInclusive(offset: number): ASTNode | undefined {
+    const collector: (ASTNodeImpl | ASTNode)[] = [];
+    const findNode = (node: ASTNode | ASTNodeImpl): ASTNode | ASTNodeImpl | null => {
+      if (offset >= node.offset && offset <= node.offset + (node.length ?? 0)) {
+        const children = node.children ?? [];
         for (let i = 0; i < children.length && children[i].offset <= offset; i++) {
           const item = findNode(children[i]);
           if (item) {
@@ -115,15 +115,15 @@ export abstract class ASTNodeImpl {
     };
     const foundNode = findNode(this);
     let currMinDist = Number.MAX_VALUE;
-    let currMinNode = null;
+    let currMinNode: ASTNodeImpl | ASTNode | undefined;
     for (const currNode of collector) {
-      const minDist = currNode.length + currNode.offset - offset + (offset - currNode.offset);
+      const minDist = (currNode.length ?? 0) + currNode.offset - offset + (offset - currNode.offset);
       if (minDist < currMinDist) {
         currMinNode = currNode;
         currMinDist = minDist;
       }
     }
-    return currMinNode || foundNode;
+    return (currMinNode || foundNode) as ASTNode | undefined;
   }
 
   public get children(): ASTNode[] {
@@ -147,7 +147,7 @@ export abstract class ASTNodeImpl {
 export class NullASTNodeImpl extends ASTNodeImpl implements NullASTNode {
   public type: 'null' = 'null';
   public value = null;
-  constructor(parent: ASTNode, internalNode: Node, offset: number, length?: number) {
+  constructor(parent: ASTNode | undefined, internalNode: Node, offset: number, length?: number) {
     super(parent, internalNode, offset, length);
   }
 }
@@ -156,7 +156,7 @@ export class BooleanASTNodeImpl extends ASTNodeImpl implements BooleanASTNode {
   public type: 'boolean' = 'boolean';
   public value: boolean;
 
-  constructor(parent: ASTNode, internalNode: Node, boolValue: boolean, offset: number, length?: number) {
+  constructor(parent: ASTNode | undefined, internalNode: Node, boolValue: boolean, offset: number, length?: number) {
     super(parent, internalNode, offset, length);
     this.value = boolValue;
   }
@@ -166,7 +166,7 @@ export class ArrayASTNodeImpl extends ASTNodeImpl implements ArrayASTNode {
   public type: 'array' = 'array';
   public items: ASTNode[];
 
-  constructor(parent: ASTNode, internalNode: Node, offset: number, length?: number) {
+  constructor(parent: ASTNode | undefined, internalNode: Node, offset: number, length?: number) {
     super(parent, internalNode, offset, length);
     this.items = [];
   }
@@ -181,7 +181,7 @@ export class NumberASTNodeImpl extends ASTNodeImpl implements NumberASTNode {
   public isInteger: boolean;
   public value: number;
 
-  constructor(parent: ASTNode, internalNode: Node, offset: number, length?: number) {
+  constructor(parent: ASTNode | undefined, internalNode: Node, offset: number, length?: number) {
     super(parent, internalNode, offset, length);
     this.isInteger = true;
     this.value = Number.NaN;
@@ -192,7 +192,7 @@ export class StringASTNodeImpl extends ASTNodeImpl implements StringASTNode {
   public type: 'string' = 'string';
   public value: string;
 
-  constructor(parent: ASTNode, internalNode: Node, offset: number, length?: number) {
+  constructor(parent: ASTNode | undefined, internalNode: Node, offset: number, length?: number) {
     super(parent, internalNode, offset, length);
     this.value = '';
   }
@@ -218,7 +218,7 @@ export class ObjectASTNodeImpl extends ASTNodeImpl implements ObjectASTNode {
   public type: 'object' = 'object';
   public properties: PropertyASTNode[];
 
-  constructor(parent: ASTNode, internalNode: Node, offset: number, length?: number) {
+  constructor(parent: ASTNode | undefined, internalNode: Node, offset: number, length?: number) {
     super(parent, internalNode, offset, length);
 
     this.properties = [];
@@ -229,7 +229,7 @@ export class ObjectASTNodeImpl extends ASTNodeImpl implements ObjectASTNode {
   }
 }
 
-export function asSchema(schema: JSONSchemaRef): JSONSchema | undefined {
+export function asSchema(schema: JSONSchemaRef | undefined): JSONSchema | undefined {
   if (schema === undefined) {
     return undefined;
   }
@@ -273,7 +273,7 @@ export interface ISchemaCollector {
 
 class SchemaCollector implements ISchemaCollector {
   schemas: IApplicableSchema[] = [];
-  constructor(private focusOffset = -1, private exclude: ASTNode = null) {}
+  constructor(private focusOffset = -1, private exclude?: ASTNode) {}
   add(schema: IApplicableSchema): void {
     this.schemas.push(schema);
   }
@@ -323,9 +323,9 @@ export class ValidationResult {
   public primaryValueMatches: number;
   public enumValueMatch: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public enumValues: any[];
+  public enumValues: any[] | null;
 
-  constructor(isKubernetes: boolean) {
+  constructor(isKubernetes: boolean | undefined) {
     this.problems = [];
     this.propertiesMatches = 0;
     this.propertiesValueMatches = 0;
@@ -387,11 +387,18 @@ export class ValidationResult {
               (problemType !== ProblemType.missingRequiredPropWarning || isArrayEqual(p.problemArgs, bestResult.problemArgs)) // missingProp is merged only with same problemArg
           );
           if (mergingResult) {
-            if (mergingResult.problemArgs.length) {
-              mergingResult.problemArgs
-                .filter((p) => !bestResult.problemArgs.includes(p))
-                .forEach((p) => bestResult.problemArgs.push(p));
-              bestResult.message = getWarningMessage(bestResult.problemType, bestResult.problemArgs);
+            if (mergingResult.problemArgs?.length) {
+              if (!bestResult.problemArgs) {
+                bestResult.problemArgs = [];
+              }
+              for (const p of mergingResult.problemArgs) {
+                if (!bestResult.problemArgs.includes(p)) {
+                  bestResult.problemArgs.push(p);
+                }
+              }
+              if (bestResult.problemType) {
+                bestResult.message = getWarningMessage(bestResult.problemType, bestResult.problemArgs);
+              }
             }
             this.mergeSources(mergingResult, bestResult);
           }
@@ -415,12 +422,12 @@ export class ValidationResult {
   }
 
   private mergeSources(mergingResult: IProblem, bestResult: IProblem): void {
-    const mergingSource = mergingResult.source.replace(YAML_SCHEMA_PREFIX, '');
-    if (!bestResult.source.includes(mergingSource)) {
+    const mergingSource = mergingResult.source?.replace(YAML_SCHEMA_PREFIX, '') ?? '';
+    if (!bestResult.source?.includes(mergingSource)) {
       bestResult.source = bestResult.source + ' | ' + mergingSource;
     }
-    if (!bestResult.schemaUri.includes(mergingResult.schemaUri[0])) {
-      bestResult.schemaUri = bestResult.schemaUri.concat(mergingResult.schemaUri);
+    if (mergingResult.schemaUri && !bestResult.schemaUri?.includes(mergingResult.schemaUri[0])) {
+      bestResult.schemaUri = (bestResult.schemaUri ?? []).concat(mergingResult.schemaUri);
     }
   }
 
@@ -475,7 +482,7 @@ export function getNodeValue(node: ASTNode): any {
       const obj = Object.create(null);
       for (let _i = 0, _a = node.children; _i < _a.length; _i++) {
         const prop = _a[_i];
-        const valueNode = prop.children[1];
+        const valueNode = prop.children?.[1];
         if (valueNode) {
           obj[prop.children[0].value as string] = getNodeValue(valueNode);
         }
@@ -498,7 +505,7 @@ export function contains(node: ASTNode, offset: number, includeRightBound = fals
   );
 }
 
-export function findNodeAtOffset(node: ASTNode, offset: number, includeRightBound: boolean): ASTNode {
+export function findNodeAtOffset(node: ASTNode, offset: number, includeRightBound: boolean): ASTNode | undefined {
   if (includeRightBound === void 0) {
     includeRightBound = false;
   }
@@ -517,12 +524,12 @@ export function findNodeAtOffset(node: ASTNode, offset: number, includeRightBoun
   return undefined;
 }
 
-export class JSONDocument {
-  public isKubernetes: boolean;
-  public disableAdditionalProperties: boolean;
+export class JSONDocument implements JSONDocumentBase {
+  public isKubernetes?: boolean;
+  public disableAdditionalProperties?: boolean;
 
   constructor(
-    public readonly root: ASTNode,
+    public readonly root: ASTNode | undefined,
     public readonly syntaxErrors: Diagnostic[] = [],
     public readonly comments: Range[] = []
   ) {}
@@ -534,8 +541,8 @@ export class JSONDocument {
     return undefined;
   }
 
-  public getNodeFromOffsetEndInclusive(offset: number): ASTNode {
-    return this.root && this.root.getNodeFromOffsetEndInclusive(offset);
+  public getNodeFromOffsetEndInclusive(offset: number): ASTNode | undefined {
+    return (this.root && this.root.getNodeFromOffsetEndInclusive(offset)) || undefined;
   }
 
   public visit(visitor: (node: ASTNode) => boolean): void {
@@ -554,7 +561,7 @@ export class JSONDocument {
     }
   }
 
-  public validate(textDocument: TextDocument, schema: JSONSchema): Diagnostic[] {
+  public validate(textDocument: TextDocument, schema: JSONSchema): Diagnostic[] | null {
     if (this.root && schema) {
       const validationResult = new ValidationResult(this.isKubernetes);
       validate(this.root, schema, schema, validationResult, NoOpSchemaCollector.instance, {
@@ -597,7 +604,7 @@ export class JSONDocument {
   public getMatchingSchemas(
     schema: JSONSchema,
     focusOffset = -1,
-    exclude: ASTNode = null,
+    exclude?: ASTNode,
     didCallFromAutoComplete?: boolean
   ): IApplicableSchema[] {
     const matchingSchemas = new SchemaCollector(focusOffset, exclude);
@@ -612,20 +619,16 @@ export class JSONDocument {
   }
 }
 interface Options {
-  isKubernetes: boolean;
-  disableAdditionalProperties: boolean;
+  isKubernetes?: boolean;
+  disableAdditionalProperties?: boolean;
   callFromAutoComplete?: boolean;
 }
+type Tail<T extends [...unknown[]]> = T extends [unknown, ...(infer Rest)] ? Rest : T;
 function validate(
-  node: ASTNode,
-  schema: JSONSchema,
-  originalSchema: JSONSchema,
-  validationResult: ValidationResult,
-  matchingSchemas: ISchemaCollector,
-  options: Options
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): any {
-  const { isKubernetes, callFromAutoComplete } = options;
+  node: ASTNode | undefined | undefined,
+  schema: JSONSchema | undefined,
+  ...rest: Tail<Tail<Parameters<typeof _validate>>>
+): void {
   if (!node) {
     return;
   }
@@ -634,6 +637,18 @@ function validate(
   if (typeof schema !== 'object') {
     return;
   }
+
+  return _validate(node, schema, ...rest);
+}
+function _validate(
+  node: ASTNode,
+  schema: JSONSchema,
+  originalSchema: JSONSchema,
+  validationResult: ValidationResult,
+  matchingSchemas: ISchemaCollector,
+  options: Options
+): void {
+  const { isKubernetes, callFromAutoComplete } = options;
 
   if (!schema.url) {
     schema.url = originalSchema.url;
@@ -719,14 +734,14 @@ function validate(
     }
 
     const testAlternatives = (alternatives: JSONSchemaRef[], maxOneMatch: boolean): number => {
-      const matches = [];
-      const noPropertyMatches = [];
+      const matches: JSONSchema[] = [];
+      const noPropertyMatches: JSONSchema[] = [];
       // remember the best match that is used for error messages
       let bestMatch: {
         schema: JSONSchema;
         validationResult: ValidationResult;
         matchingSchemas: ISchemaCollector;
-      } = null;
+      } | null = null;
       for (const subSchemaRef of alternatives) {
         const subSchema = { ...asSchema(subSchemaRef) };
         const subValidationResult = new ValidationResult(isKubernetes);
@@ -1168,12 +1183,13 @@ function validate(
     validationResult: ValidationResult,
     matchingSchemas: ISchemaCollector
   ): void {
-    const seenKeys: { [key: string]: ASTNode } = Object.create(null);
+    const seenKeys: { [key: string]: ASTNode | undefined } = Object.create(null);
     const unprocessedProperties: string[] = [];
     const unprocessedNodes: PropertyASTNode[] = [...node.properties];
 
     while (unprocessedNodes.length > 0) {
-      const propertyNode = unprocessedNodes.pop();
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const propertyNode = unprocessedNodes.pop()!;
       const key = propertyNode.keyNode.value;
 
       //Replace the merge key with the actual values of what the node value points to in seen keys
@@ -1319,11 +1335,13 @@ function validate(
         for (const propertyName of unprocessedProperties) {
           const child = seenKeys[propertyName];
           if (child) {
-            let propertyNode = null;
+            let propertyNode: PropertyASTNode | undefined;
             if (child.type !== 'property') {
-              propertyNode = <PropertyASTNode>child.parent;
-              if (propertyNode.type === 'object') {
-                propertyNode = propertyNode.properties[0];
+              const parentNode = child.parent;
+              if (parentNode?.type === 'object') {
+                propertyNode = parentNode.properties[0];
+              } else {
+                propertyNode = parentNode as PropertyASTNode;
               }
             } else {
               propertyNode = child;
@@ -1498,7 +1516,7 @@ function validate(
 
 function getSchemaSource(schema: JSONSchema, originalSchema: JSONSchema): string | undefined {
   if (schema) {
-    let label: string;
+    let label: string | undefined;
     if (schema.title) {
       label = schema.title;
     } else if (schema.closestTitle) {

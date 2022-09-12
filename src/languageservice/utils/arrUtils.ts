@@ -29,8 +29,8 @@ export function getLineOffsets(textDocString: string): number[] {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function removeDuplicatesObj(objArray: any[]): any[] {
-  const nonDuplicateSet = new Set();
-  const nonDuplicateArr = [];
+  const nonDuplicateSet: Set<string> = new Set();
+  const nonDuplicateArr: any[] = [];
   for (const obj in objArray) {
     const currObj = objArray[obj];
     const stringifiedObj = JSON.stringify(currObj);
@@ -45,7 +45,11 @@ export function removeDuplicatesObj(objArray: any[]): any[] {
 
 export function matchOffsetToDocument(offset: number, jsonDocuments: YAMLDocument): SingleYAMLDocument | null {
   for (const jsonDoc of jsonDocuments.documents) {
-    if (jsonDoc.internalDocument && jsonDoc.internalDocument.range[0] <= offset && jsonDoc.internalDocument.range[2] >= offset) {
+    if (
+      jsonDoc.internalDocument?.range &&
+      jsonDoc.internalDocument.range[0] <= offset &&
+      jsonDoc.internalDocument.range[2] >= offset
+    ) {
       return jsonDoc;
     }
   }
@@ -57,7 +61,7 @@ export function matchOffsetToDocument(offset: number, jsonDocuments: YAMLDocumen
   return null;
 }
 
-export function filterInvalidCustomTags(customTags: string[]): string[] {
+export function filterInvalidCustomTags(customTags: string[] | undefined): string[] {
   const validCustomTags = ['mapping', 'scalar', 'sequence'];
 
   if (!customTags) {
@@ -78,7 +82,7 @@ export function filterInvalidCustomTags(customTags: string[]): string[] {
     return false;
   });
 }
-export function isArrayEqual(fst: Array<unknown>, snd: Array<unknown>): boolean {
+export function isArrayEqual(fst: Array<unknown> | undefined, snd: Array<unknown> | undefined): boolean {
   if (!snd || !fst) {
     return false;
   }

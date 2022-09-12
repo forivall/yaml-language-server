@@ -11,7 +11,7 @@ export const JSON_SCHEMASTORE_URL = 'https://www.schemastore.org/api/json/catalo
 
 export function checkSchemaURI(
   workspaceFolders: WorkspaceFolder[],
-  workspaceRoot: URI,
+  workspaceRoot: URI | null,
   uri: string,
   telemetry: Telemetry
 ): string {

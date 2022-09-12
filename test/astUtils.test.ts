@@ -21,8 +21,8 @@ describe('AST Utils Tests', () => {
       const doc = setupTextDocument('foo: bar');
       const yamlDoc = documents.getYamlDocument(doc);
 
-      const [node] = yamlDoc.documents[0].getNodeFromPosition(2, new TextBuffer(doc));
-      const result = getParent(yamlDoc.documents[0].internalDocument, node);
+      const [node] = yamlDoc!.documents[0].getNodeFromPosition(2, new TextBuffer(doc));
+      const result = getParent(yamlDoc!.documents[0].internalDocument, node!);
 
       expect(result).is.not.undefined;
       expect(isPair(result)).is.true;
@@ -33,8 +33,8 @@ describe('AST Utils Tests', () => {
       const doc = setupTextDocument('foo: bar');
       const yamlDoc = documents.getYamlDocument(doc);
 
-      const [node] = yamlDoc.documents[0].getNodeFromPosition(6, new TextBuffer(doc));
-      const result = getParent(yamlDoc.documents[0].internalDocument, node);
+      const [node] = yamlDoc!.documents[0].getNodeFromPosition(6, new TextBuffer(doc));
+      const result = getParent(yamlDoc!.documents[0].internalDocument, node!);
 
       expect(result).is.not.undefined;
       expect(isPair(result)).is.true;
@@ -45,8 +45,8 @@ describe('AST Utils Tests', () => {
       const doc = setupTextDocument('foo: bar');
       const yamlDoc = documents.getYamlDocument(doc);
 
-      const [node] = yamlDoc.documents[0].getNodeFromPosition(4, new TextBuffer(doc));
-      const result = getParent(yamlDoc.documents[0].internalDocument, node);
+      const [node] = yamlDoc!.documents[0].getNodeFromPosition(4, new TextBuffer(doc));
+      const result = getParent(yamlDoc!.documents[0].internalDocument, node!);
 
       expect(result).is.undefined;
     });
@@ -55,8 +55,8 @@ describe('AST Utils Tests', () => {
       const doc = setupTextDocument('foo:\n  - bar');
       const yamlDoc = documents.getYamlDocument(doc);
 
-      const [node] = yamlDoc.documents[0].getNodeFromPosition(10, new TextBuffer(doc));
-      const result = getParent(yamlDoc.documents[0].internalDocument, node);
+      const [node] = yamlDoc!.documents[0].getNodeFromPosition(10, new TextBuffer(doc));
+      const result = getParent(yamlDoc!.documents[0].internalDocument, node!);
 
       expect(result).is.not.undefined;
       expect(isSeq(result)).is.true;
@@ -67,8 +67,8 @@ describe('AST Utils Tests', () => {
       const doc = setupTextDocument('foo:\n  - bar');
       const yamlDoc = documents.getYamlDocument(doc);
 
-      const [node] = yamlDoc.documents[0].getNodeFromPosition(7, new TextBuffer(doc));
-      const result = getParent(yamlDoc.documents[0].internalDocument, node);
+      const [node] = yamlDoc!.documents[0].getNodeFromPosition(7, new TextBuffer(doc));
+      const result = getParent(yamlDoc!.documents[0].internalDocument, node!);
 
       expect(result).is.not.undefined;
       expect(isPair(result)).is.true;
@@ -80,14 +80,14 @@ describe('AST Utils Tests', () => {
     it('should detect that offset in comment', () => {
       const doc = setupTextDocument('#some comment\nfoo: bar');
       const yamlDoc = documents.getYamlDocument(doc);
-      const result = isInComment(yamlDoc.tokens, 4);
+      const result = isInComment(yamlDoc!.tokens, 4);
       expect(result).to.be.true;
     });
 
     it('should detect that comment inside object', () => {
       const doc = setupTextDocument('obj:\n#some comment\n  foo: bar');
       const yamlDoc = documents.getYamlDocument(doc);
-      const result = isInComment(yamlDoc.tokens, 12);
+      const result = isInComment(yamlDoc!.tokens, 12);
       expect(result).to.be.true;
     });
   });

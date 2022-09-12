@@ -8,12 +8,15 @@ import { ASTNode } from '../jsonASTTypes';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
-export function getFoldingRanges(document: TextDocument, context: FoldingRangesContext): FoldingRange[] | undefined {
+export function getFoldingRanges(document: TextDocument | undefined, context: FoldingRangesContext): FoldingRange[] | null {
   if (!document) {
-    return;
+    return null;
+  }
+  const doc = yamlDocumentsCache.getYamlDocument(document);
+  if (!doc) {
+    return null;
   }
   const result: FoldingRange[] = [];
-  const doc = yamlDocumentsCache.getYamlDocument(document);
   for (const ymlDoc of doc.documents) {
     if (doc.documents.length > 1) {
       result.push(createNormalizedFolding(document, ymlDoc.root));

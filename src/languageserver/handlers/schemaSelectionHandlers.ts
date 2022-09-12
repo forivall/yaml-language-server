@@ -47,6 +47,9 @@ export class JSONSchemaSelection {
     }
 
     const yamlDoc = yamlDocumentsCache.getYamlDocument(document);
+    if (!yamlDoc) {
+      return schemas;
+    }
 
     for (const currentYAMLDoc of yamlDoc.documents) {
       const schema = await this.schemaService.getSchemaForResource(document.uri, currentYAMLDoc);
@@ -75,7 +78,7 @@ export class JSONSchemaSelection {
         versions: val[1].versions,
       };
     });
-    const result = [];
+    const result: JSONSchemaDescriptionExt[] = [];
     let allSchemas = this.schemaService.getAllSchemas();
     allSchemas = allSchemas.filter((val) => !fileSchemas.has(val.uri));
     result.push(...fileSchemasHandle);

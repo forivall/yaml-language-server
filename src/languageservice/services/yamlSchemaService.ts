@@ -9,7 +9,7 @@ import { JSONSchema, JSONSchemaMap, JSONSchemaRef } from '../jsonSchema';
 import { SchemaPriority, SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
 import {
   UnresolvedSchema,
-  ResolvedSchema,
+  ResolvedSchema as JSONResolvedSchema,
   JSONSchemaService,
   SchemaDependencies,
   ISchemaContributions,
@@ -21,7 +21,7 @@ import { URI } from 'vscode-uri';
 import * as nls from 'vscode-nls';
 import { convertSimple2RegExpPattern } from '../utils/strings';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
-import { JSONDocument } from '../parser/jsonParser07';
+import { JSONDocument as YamlJSONDocument } from '../parser/jsonParser07';
 import { parse } from 'yaml';
 import * as path from 'path';
 import { getSchemaFromModeline } from './modelineUtil';
@@ -30,6 +30,15 @@ import { SchemaVersions } from '../yamlTypes';
 
 import Ajv, { DefinedError } from 'ajv';
 import { getSchemaTitle } from '../utils/schemaUtils';
+import { JSONDocument } from 'vscode-json-languageservice';
+
+export interface ResolvedSchema extends JSONResolvedSchema {
+  schema: JSONSchema;
+  errors: string[];
+  getSection(path: string[]): JSONSchema | undefined;
+}
+type ResolvedSchemaCtor = new (...args: ConstructorParameters<typeof JSONResolvedSchema>) => ResolvedSchema;
+const ResolvedSchema = JSONResolvedSchema as ResolvedSchemaCtor;
 
 const localize = nls.loadMessageBundle();
 
@@ -71,7 +80,7 @@ export interface SchemaDeletionsAll {
 
 export class FilePatternAssociation {
   private schemas: string[];
-  private patternRegExp: RegExp;
+  private patternRegExp: RegExp | null;
 
   constructor(pattern: string) {
     try {
@@ -88,7 +97,7 @@ export class FilePatternAssociation {
   }
 
   public matchesPattern(fileName: string): boolean {
-    return this.patternRegExp && this.patternRegExp.test(fileName);
+    return this.patternRegExp?.test(fileName) ?? false;
   }
 
   public getSchemas(): string[] {
@@ -106,6 +115,9 @@ export class YAMLSchemaService extends JSONSchemaService {
   protected contextService: WorkspaceContextService;
   protected requestService: SchemaRequestService;
   public schemaPriorityMapping: Map<string, Set<SchemaPriority>>;
+  protected schemasById: {
+    [id: string]: SchemaHandle;
+  };
 
   private schemaUriToNameAndDescription = new Map<string, SchemaStoreSchema>();
 
@@ -140,7 +152,8 @@ export class YAMLSchemaService extends JSONSchemaService {
       };
 
       if (this.schemaUriToNameAndDescription.has(schemaUri)) {
-        const { name, description, versions } = this.schemaUriToNameAndDescription.get(schemaUri);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const { name, description, versions } = this.schemaUriToNameAndDescription.get(schemaUri)!;
         schemaHandle.name = name;
         schemaHandle.description = description;
         schemaHandle.fromStore = true;
@@ -243,14 +256,14 @@ export class YAMLSchemaService extends JSONSchemaService {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const openPromises: Promise<any>[] = [];
 
-      const collectEntries = (...entries: JSONSchemaRef[]): void => {
+      const collectEntries = (...entries: (JSONSchemaRef | undefined)[]): void => {
         for (const entry of entries) {
           if (typeof entry === 'object') {
             toWalk.push(entry);
           }
         }
       };
-      const collectMapEntries = (...maps: JSONSchemaMap[]): void => {
+      const collectMapEntries = (...maps: (JSONSchemaMap | undefined)[]): void => {
         for (const map of maps) {
           if (typeof map === 'object') {
             for (const key in map) {
@@ -262,7 +275,7 @@ export class YAMLSchemaService extends JSONSchemaService {
           }
         }
       };
-      const collectArrayEntries = (...arrays: JSONSchemaRef[][]): void => {
+      const collectArrayEntries = (...arrays: (JSONSchemaRef[] | undefined)[]): void => {
         for (const array of arrays) {
           if (Array.isArray(array)) {
             for (const entry of array) {
@@ -274,7 +287,7 @@ export class YAMLSchemaService extends JSONSchemaService {
         }
       };
       const handleRef = (next: JSONSchema): void => {
-        const seenRefs = [];
+        const seenRefs: string[] = [];
         while (next.$ref) {
           const ref = next.$ref;
           const segments = ref.split('#', 2);
@@ -325,7 +338,8 @@ export class YAMLSchemaService extends JSONSchemaService {
       }
 
       while (toWalk.length) {
-        const next = toWalk.pop();
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const next = toWalk.pop()!;
         if (seen.indexOf(next) >= 0) {
           continue;
         }
@@ -339,9 +353,12 @@ export class YAMLSchemaService extends JSONSchemaService {
     return new ResolvedSchema(schema, resolveErrors);
   }
 
-  public getSchemaForResource(resource: string, doc: JSONDocument): Promise<ResolvedSchema> {
+  public getSchemaForResource(
+    resource: string,
+    doc: JSONDocument | SingleYAMLDocument | undefined
+  ): Promise<ResolvedSchema | null> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const resolveSchema = (): any => {
+    const resolveSchema = (): Promise<ResolvedSchema | null> => {
       const seen: { [schemaId: string]: boolean } = Object.create(null);
       const schemas: string[] = [];
 
@@ -429,14 +446,11 @@ export class YAMLSchemaService extends JSONSchemaService {
               })
             ).then(
               (schemas) => {
-                return {
-                  errors: [],
-                  schema: {
-                    anyOf: schemas.map((schemaObj) => {
-                      return schemaObj.schema;
-                    }),
-                  },
-                };
+                return new ResolvedSchema({
+                  anyOf: schemas.map((schemaObj) => {
+                    return schemaObj.schema;
+                  }),
+                });
               },
               () => {
                 return resolveSchema();
@@ -674,7 +688,8 @@ export class YAMLSchemaService extends JSONSchemaService {
       }
       unresolvedJsonSchema.uri = schemaUri;
       if (this.schemaUriToNameAndDescription.has(schemaUri)) {
-        const { name, description, versions } = this.schemaUriToNameAndDescription.get(schemaUri);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const { name, description, versions } = this.schemaUriToNameAndDescription.get(schemaUri)!;
         unresolvedJsonSchema.schema.title = name ?? unresolvedJsonSchema.schema.title;
         unresolvedJsonSchema.schema.description = description ?? unresolvedJsonSchema.schema.description;
         unresolvedJsonSchema.schema.versions = versions ?? unresolvedJsonSchema.schema.versions;
@@ -687,8 +702,8 @@ export class YAMLSchemaService extends JSONSchemaService {
     uri: string,
     filePatterns?: string[],
     unresolvedSchema?: JSONSchema,
-    name?: string,
-    description?: string,
+    name = '',
+    description = '',
     versions?: SchemaVersions
   ): SchemaHandle {
     if (name || description) {
@@ -710,7 +725,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     return super.getRegisteredSchemaIds(filter);
   }
 
-  getResolvedSchema(schemaId: string): Promise<ResolvedSchema> {
+  getResolvedSchema(schemaId: string): Promise<ResolvedSchema | undefined> {
     return super.getResolvedSchema(schemaId);
   }
 

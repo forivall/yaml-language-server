@@ -94,7 +94,7 @@ describe('YAML Documents', () => {
 
     it('Get node from position: key', () => {
       const doc = setupTextDocument('foo: bar');
-      const yamlDoc = documents.getYamlDocument(doc);
+      const yamlDoc = documents.getYamlDocument(doc)!;
 
       const [result] = yamlDoc.documents[0].getNodeFromPosition(2, new TextBuffer(doc));
 
@@ -105,7 +105,7 @@ describe('YAML Documents', () => {
 
     it('Get node from position: value', () => {
       const doc = setupTextDocument('foo: bar');
-      const yamlDoc = documents.getYamlDocument(doc);
+      const yamlDoc = documents.getYamlDocument(doc)!;
 
       const [result] = yamlDoc.documents[0].getNodeFromPosition(6, new TextBuffer(doc));
 
@@ -116,7 +116,7 @@ describe('YAML Documents', () => {
 
     it('Get node from position: map', () => {
       const doc = setupTextDocument('foo: bar');
-      const yamlDoc = documents.getYamlDocument(doc);
+      const yamlDoc = documents.getYamlDocument(doc)!;
 
       const [result] = yamlDoc.documents[0].getNodeFromPosition(4, new TextBuffer(doc));
 
@@ -127,7 +127,7 @@ describe('YAML Documents', () => {
 
     it('Get node from position: scalar in array', () => {
       const doc = setupTextDocument('foo:\n  - bar');
-      const yamlDoc = documents.getYamlDocument(doc);
+      const yamlDoc = documents.getYamlDocument(doc)!;
 
       const [result] = yamlDoc.documents[0].getNodeFromPosition(9, new TextBuffer(doc));
 
@@ -138,7 +138,7 @@ describe('YAML Documents', () => {
 
     it('Get node from position: array', () => {
       const doc = setupTextDocument('foo:\n  - bar');
-      const yamlDoc = documents.getYamlDocument(doc);
+      const yamlDoc = documents.getYamlDocument(doc)!;
 
       const [result] = yamlDoc.documents[0].getNodeFromPosition(8, new TextBuffer(doc));
 
@@ -149,7 +149,7 @@ describe('YAML Documents', () => {
 
     it('Get node from position: map with array', () => {
       const doc = setupTextDocument('foo:\n  - bar');
-      const yamlDoc = documents.getYamlDocument(doc);
+      const yamlDoc = documents.getYamlDocument(doc)!;
 
       const [result] = yamlDoc.documents[0].getNodeFromPosition(6, new TextBuffer(doc));
 
@@ -160,7 +160,7 @@ describe('YAML Documents', () => {
 
     it('Get node from position: flow map key', () => {
       const doc = setupTextDocument('{foo: bar}');
-      const yamlDoc = documents.getYamlDocument(doc);
+      const yamlDoc = documents.getYamlDocument(doc)!;
 
       const [result] = yamlDoc.documents[0].getNodeFromPosition(3, new TextBuffer(doc));
 
@@ -171,7 +171,7 @@ describe('YAML Documents', () => {
 
     it('Get node from position: flow map value', () => {
       const doc = setupTextDocument('{foo: bar}');
-      const yamlDoc = documents.getYamlDocument(doc);
+      const yamlDoc = documents.getYamlDocument(doc)!;
 
       const [result] = yamlDoc.documents[0].getNodeFromPosition(8, new TextBuffer(doc));
 
@@ -188,7 +188,7 @@ objB:
   size: midle
   name: nameB2
 `);
-      const yamlDoc = documents.getYamlDocument(doc);
+      const yamlDoc = documents.getYamlDocument(doc)!;
 
       const result = yamlDoc.documents[0].findClosestNode(27, new TextBuffer(doc));
 
@@ -201,7 +201,7 @@ objB:
 
     it('Find closes node: map', () => {
       const doc = setupTextDocument('foo:\n  bar: aaa\n  ');
-      const yamlDoc = documents.getYamlDocument(doc);
+      const yamlDoc = documents.getYamlDocument(doc)!;
       const textBuffer = new TextBuffer(doc);
 
       const result = yamlDoc.documents[0].findClosestNode(18, textBuffer);
@@ -213,7 +213,7 @@ objB:
 
     it('Find closes node: array', () => {
       const doc = setupTextDocument('foo:\n  - bar: aaa\n  ');
-      const yamlDoc = documents.getYamlDocument(doc);
+      const yamlDoc = documents.getYamlDocument(doc)!;
       const textBuffer = new TextBuffer(doc);
 
       const result = yamlDoc.documents[0].findClosestNode(20, textBuffer);
@@ -225,7 +225,7 @@ objB:
 
     it('Find closes node: root map', () => {
       const doc = setupTextDocument('foo:\n  bar: aaa\n  ');
-      const yamlDoc = documents.getYamlDocument(doc);
+      const yamlDoc = documents.getYamlDocument(doc)!;
       const textBuffer = new TextBuffer(doc);
 
       const result = yamlDoc.documents[0].findClosestNode(17, textBuffer);
